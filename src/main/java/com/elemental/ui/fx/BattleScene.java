@@ -4,95 +4,183 @@ import com.elemental.MainFX;
 import com.elemental.model.*;
 import com.elemental.model.Character;
 import javafx.animation.PauseTransition;
+import javafx.animation.ScaleTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node; // <--- INI YANG TADINYA KURANG
+import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
 public class BattleScene {
+    // Layout Utama
     private BorderPane layout;
-    private Pane overlayPane;
+    private Pane overlayPane; // Untuk floating text damage
     private TextArea battleLog;
-    private VBox playerBox, enemyBox;
-    private HBox actionMenu;
 
-    private ProgressBar playerHP, playerMP, enemyHP;
-    private Label playerInfo, enemyInfo;
+    // Area Sprite (Tengah)
+    private HBox arenaContainer; // Wadah utama pertarungan (Kiri vs Kanan)
+    private VBox enemySpriteBox; // Wadah gambar musuh (Kiri)
+    private VBox playerSpriteBox; // Wadah gambar player (Kanan)
+
+    // HUD Atas (Musuh)
+    private VBox topHud;
+    private Label enemyNameLbl;
+    private ProgressBar enemyHP;
+
+    // HUD Bawah (Player)
+    private VBox bottomHud;
+    private Label playerNameLbl;
+    private ProgressBar playerHP, playerMP;
+    private HBox actionMenu; // Tombol-tombol
 
     public BattleScene() {
+        // Root Stack untuk menumpuk UI Game dan Efek Visual
         StackPane rootStack = new StackPane();
         rootStack.getStyleClass().add("root");
 
         layout = new BorderPane();
-        layout.setPadding(new Insets(10));
 
+        // Layer efek (Floating Text) agar tidak mengganggu layout
         overlayPane = new Pane();
         overlayPane.setPickOnBounds(false);
 
-        // --- TOP: ENEMY ---
-        enemyBox = new VBox(10);
-        enemyBox.setAlignment(Pos.CENTER);
-        enemyBox.getStyleClass().add("panel-background");
-        enemyBox.setPadding(new Insets(10));
-        enemyBox.setMaxHeight(150);
-        enemyBox.setId("enemyBox");
+        // =========================================
+        // 1. TOP SECTION (ENEMY HUD)
+        // =========================================
+        topHud = new VBox(5);
+        topHud.setPadding(new Insets(10, 20, 10, 20));
+        topHud.setAlignment(Pos.CENTER);
+        topHud.getStyleClass().add("panel-background"); // Style kertas krem
+        // Sedikit margin biar tidak nempel ujung layar
+        BorderPane.setMargin(topHud, new Insets(10, 10, 0, 10));
 
-        enemyInfo = new Label("Enemy Info");
+        enemyNameLbl = new Label("Enemy Name");
+        enemyNameLbl.setStyle("-fx-font-family: 'Times New Roman'; -fx-font-size: 18px; -fx-font-weight: bold;");
+
         enemyHP = new ProgressBar(1.0);
         enemyHP.getStyleClass().add("hp-bar");
-        enemyHP.setPrefWidth(300);
+        enemyHP.setPrefWidth(400); // Bar lebar
+        enemyHP.setStyle("-fx-accent: #ff3333;"); // Warna merah
 
-        enemyBox.getChildren().addAll(enemyInfo, enemyHP);
-        layout.setTop(enemyBox);
+        topHud.getChildren().addAll(enemyNameLbl, enemyHP);
+        layout.setTop(topHud);
 
-        // --- CENTER ---
+        // =========================================
+        // 2. CENTER SECTION (BATTLE ARENA)
+        // =========================================
+        arenaContainer = new HBox();
+        arenaContainer.setAlignment(Pos.CENTER);
+        arenaContainer.setSpacing(100); // Jarak antara Player dan Musuh
+        // Background gelap untuk area tengah
+        arenaContainer.setStyle("-fx-background-color: #2b2b2b;");
+
+        // --- KIRI: Musuh Sprite ---
+        enemySpriteBox = new VBox();
+        enemySpriteBox.setAlignment(Pos.CENTER);
+        // Kita beri ID agar efek animasi tahu lokasi ini
+        enemySpriteBox.setId("enemyBox");
+
+        // --- KANAN: Player Sprite ---
+        playerSpriteBox = new VBox();
+        playerSpriteBox.setAlignment(Pos.CENTER);
+        playerSpriteBox.setId("playerBox");
+
+        // VS Text di tengah (Optional, bisa dihapus kalau ganggu)
         Label vsLabel = new Label("VS");
-        vsLabel.setStyle("-fx-font-size: 50px; -fx-text-fill: rgba(255,255,255,0.2);");
-        StackPane centerPane = new StackPane(vsLabel);
-        layout.setCenter(centerPane);
+        vsLabel.setStyle("-fx-font-size: 60px; -fx-text-fill: rgba(255,255,255,0.1); -fx-font-weight: bold;");
 
-        // --- RIGHT: LOG ---
+        // Masukkan ke Arena: Musuh - VS - Player
+        arenaContainer.getChildren().addAll(enemySpriteBox, vsLabel, playerSpriteBox);
+        layout.setCenter(arenaContainer);
+
+        // =========================================
+        // 3. RIGHT SECTION (LOG)
+        // =========================================
+        VBox logContainer = new VBox();
+        logContainer.setPadding(new Insets(10));
+        logContainer.getStyleClass().add("panel-background");
+        BorderPane.setMargin(logContainer, new Insets(10, 10, 10, 0));
+
+        Label logTitle = new Label("Battle Log");
+        logTitle.setStyle("-fx-font-weight: bold;");
+
         battleLog = new TextArea();
         battleLog.setEditable(false);
-        battleLog.setPrefWidth(250);
-        battleLog.setStyle("-fx-control-inner-background: #f4e4bc;");
-        layout.setRight(battleLog);
+        battleLog.setPrefWidth(200);
+        battleLog.setPrefHeight(400);
+        battleLog.setWrapText(true);
+        battleLog.setStyle("-fx-control-inner-background: #f4e4bc; -fx-font-family: 'Courier New'; -fx-font-size: 12px;");
 
-        // --- BOTTOM: PLAYER ---
-        VBox bottomContainer = new VBox(10);
-        bottomContainer.getStyleClass().add("panel-background");
-        bottomContainer.setPadding(new Insets(10));
-        bottomContainer.setId("playerBox");
+        logContainer.getChildren().addAll(logTitle, battleLog);
+        layout.setRight(logContainer);
 
-        playerInfo = new Label("Player Info");
+        // =========================================
+        // 4. BOTTOM SECTION (PLAYER HUD)
+        // =========================================
+        bottomHud = new VBox(10);
+        bottomHud.setPadding(new Insets(15));
+        bottomHud.getStyleClass().add("panel-background");
+        BorderPane.setMargin(bottomHud, new Insets(0, 10, 10, 10));
+
+        // Info Nama & Level
+        playerNameLbl = new Label("Player Name");
+        playerNameLbl.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+
+        // Bar Container
+        VBox barsBox = new VBox(5);
         playerHP = new ProgressBar(1.0);
         playerHP.getStyleClass().add("hp-bar");
+        playerHP.setPrefWidth(300);
+
         playerMP = new ProgressBar(1.0);
         playerMP.getStyleClass().add("mp-bar");
+        playerMP.setPrefWidth(300);
 
-        actionMenu = new HBox(15);
+        barsBox.getChildren().addAll(new Label("HP"), playerHP, new Label("MP"), playerMP);
+
+        // Action Buttons
+        actionMenu = new HBox(20);
         actionMenu.setAlignment(Pos.CENTER);
 
         Button btnAttack = new Button("ATTACK");
         btnAttack.getStyleClass().add("button-medieval");
-        btnAttack.setPrefWidth(100);
+        btnAttack.setPrefWidth(120);
+        btnAttack.setPrefHeight(40);
         btnAttack.setOnAction(e -> executePlayerAction(ActionType.ATTACK, null));
 
         Button btnDefend = new Button("DEFEND");
         btnDefend.getStyleClass().add("button-medieval");
-        btnDefend.setPrefWidth(100);
+        btnDefend.setPrefWidth(120);
+        btnDefend.setPrefHeight(40);
         btnDefend.setOnAction(e -> executePlayerAction(ActionType.DEFEND, null));
 
         actionMenu.getChildren().addAll(btnAttack, btnDefend);
-        bottomContainer.getChildren().addAll(playerInfo, playerHP, playerMP, actionMenu);
-        layout.setBottom(bottomContainer);
 
+        // Tata letak panel bawah: Info di kiri, Bar di kiri, Tombol di tengah/kanan
+        HBox bottomLayout = new HBox(20);
+        bottomLayout.setAlignment(Pos.CENTER_LEFT);
+
+        VBox infoContainer = new VBox(5);
+        infoContainer.getChildren().addAll(playerNameLbl, barsBox);
+
+        // Spacer agar tombol terdorong ke tengah/kanan
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        bottomLayout.getChildren().addAll(infoContainer, spacer, actionMenu);
+        bottomHud.getChildren().add(bottomLayout);
+
+        layout.setBottom(bottomHud);
+
+        // =========================================
+        // FINAL SETUP
+        // =========================================
         rootStack.getChildren().addAll(layout, overlayPane);
 
-        this.playerBox = bottomContainer;
-
+        // Mulai Battle
         initialUpdate();
     }
 
@@ -100,8 +188,38 @@ public class BattleScene {
 
     private void initialUpdate() {
         Battle battle = MainFX.battleService.getCurrentBattle();
-        updateBars(battle.getPlayerTeam().get(0), battle.getEnemyTeam().get(0));
-        battleLog.setText("Battle Start!");
+        Character player = battle.getPlayerTeam().get(0);
+        Character enemy = battle.getEnemyTeam().get(0);
+
+        // 1. Render Sprites
+        enemySpriteBox.getChildren().clear();
+        playerSpriteBox.getChildren().clear();
+
+        ImageView enemyImg = SpriteFactory.getEnemySprite(enemy.getName());
+        ImageView playerImg = SpriteFactory.getPlayerSprite(player.getCharacterClass());
+
+        // Agar musuh menghadap kanan (jika perlu dicerminkan)
+        // enemyImg.setScaleX(-1); // Uncomment jika gambar asli menghadap kiri
+
+        // Efek Idle
+        addBreathingEffect(enemyImg);
+        addBreathingEffect(playerImg);
+
+        enemySpriteBox.getChildren().add(enemyImg);
+        playerSpriteBox.getChildren().add(playerImg);
+
+        // 2. Update Info Awal
+        updateBars(player, enemy);
+        battleLog.setText("Battle Start!\n" + player.getName() + " vs " + enemy.getName() + "\n");
+    }
+
+    private void addBreathingEffect(Node node) {
+        ScaleTransition st = new ScaleTransition(Duration.seconds(1.5), node);
+        st.setFromX(1.0); st.setFromY(1.0);
+        st.setToX(1.02); st.setToY(1.02);
+        st.setCycleCount(ScaleTransition.INDEFINITE);
+        st.setAutoReverse(true);
+        st.play();
     }
 
     private void updateUI(Character attacker, Character target, int damageDealt, boolean isCritical) {
@@ -109,31 +227,35 @@ public class BattleScene {
         Character player = battle.getPlayerTeam().get(0);
         Character enemy = battle.getEnemyTeam().get(0);
 
-        playerInfo.setText(String.format("%s (Lv.%d) - %s", player.getName(), player.getLevel(), player.getStatus()));
-        enemyInfo.setText(String.format("%s (Lv.%d) - %s", enemy.getName(), enemy.getLevel(), enemy.getStatus()));
-
-        // Cek agar log tidak error jika kosong
+        // Update Log
         if (!battle.getBattleLog().getRecentEntries().isEmpty()) {
-            battleLog.appendText("\n" + battle.getBattleLog().getRecentEntries().get(battle.getBattleLog().getRecentEntries().size()-1));
+            String lastEntry = battle.getBattleLog().getRecentEntries().get(battle.getBattleLog().getRecentEntries().size()-1);
+            battleLog.appendText(lastEntry + "\n");
         }
 
+        // Animasi Bar
         UIEffects.animateBarChange(playerHP, (double) player.getCurrentHP() / player.getMaxHP());
         UIEffects.animateBarChange(playerMP, (double) player.getCurrentMP() / player.getMaxMP());
         UIEffects.animateBarChange(enemyHP, (double) enemy.getCurrentHP() / enemy.getMaxHP());
 
+        // Update Label
+        updateBars(player, enemy);
+
+        // Efek Damage
         if (damageDealt > 0) {
             boolean targetIsEnemy = (target == enemy);
-            // Variable Node sekarang sudah dikenali
-            Node targetNode = targetIsEnemy ? enemyBox : playerBox;
-
+            Node targetNode = targetIsEnemy ? enemySpriteBox : playerSpriteBox;
             UIEffects.shakeNode(targetNode);
 
-            double xPos = layout.getWidth()/2;
-            double yPos = targetIsEnemy ? enemyBox.getHeight() + 20 : layout.getHeight() - playerBox.getHeight() - 50;
+            // Teks Damage muncul di atas kepala sprite
+            double xPos = targetIsEnemy ?
+                    enemySpriteBox.localToScene(enemySpriteBox.getBoundsInLocal()).getMinX() + 50 :
+                    playerSpriteBox.localToScene(playerSpriteBox.getBoundsInLocal()).getMinX() + 50;
+
+            double yPos = layout.getCenter().getBoundsInParent().getMinY() + 100;
 
             String text = (isCritical ? "CRIT " : "") + damageDealt;
             String style = isCritical ? "crit-text" : "damage-text";
-
             UIEffects.showFloatingText(overlayPane, text, style, xPos, yPos);
         }
 
@@ -143,10 +265,12 @@ public class BattleScene {
     }
 
     private void updateBars(Character p, Character e) {
-        playerHP.setProgress((double) p.getCurrentHP() / p.getMaxHP());
-        enemyHP.setProgress((double) e.getCurrentHP() / e.getMaxHP());
-        playerInfo.setText(p.getName());
-        enemyInfo.setText(e.getName());
+        // Update Nama & Text
+        enemyNameLbl.setText(String.format("%s (Lv.%d)", e.getName(), e.getLevel()));
+        playerNameLbl.setText(String.format("%s (Lv.%d) - %s", p.getName(), p.getLevel(), p.getStatus()));
+
+        // Progress bar value diupdate via animasi di method updateUI,
+        // tapi kita set text/tooltip jika perlu di sini.
     }
 
     private void executePlayerAction(ActionType type, Skill skill) {
@@ -162,46 +286,43 @@ public class BattleScene {
 
         battle.executeAction(action);
 
-        int damageDealt = hpBefore - enemy.getCurrentHP();
+        int damageDealt = Math.max(0, hpBefore - enemy.getCurrentHP());
         boolean isCrit = false;
-        if (!battle.getBattleLog().getRecentEntries().isEmpty()) {
-            String lastLog = battle.getBattleLog().getRecentEntries().get(battle.getBattleLog().getRecentEntries().size()-1);
-            isCrit = lastLog.contains("CRITICAL");
+        // Cek log terakhir untuk crit (simplifikasi)
+        if(!battle.getBattleLog().getRecentEntries().isEmpty()){
+            isCrit = battle.getBattleLog().getRecentEntries().get(battle.getBattleLog().getRecentEntries().size()-1).contains("CRITICAL");
         }
 
         updateUI(player, enemy, damageDealt, isCrit);
 
         if (battle.getBattleStatus() != BattleStatus.ONGOING) return;
 
-        // --- PERBAIKAN LOGIKA DELAY MUSUH (Error Void Type) ---
+        // ENEMY TURN
         actionMenu.setDisable(true);
-
-        PauseTransition pause = new PauseTransition(Duration.seconds(1.0));
+        PauseTransition pause = new PauseTransition(Duration.seconds(1.2));
         pause.setOnFinished(e -> {
+            if (battle.getBattleStatus() != BattleStatus.ONGOING) return;
             int pHpBefore = player.getCurrentHP();
 
             BattleAction enemyAction = new BattleAction(enemy, ActionType.ATTACK);
             enemyAction.setTarget(player);
             battle.executeAction(enemyAction);
 
-            int pDamage = pHpBefore - player.getCurrentHP();
+            int pDamage = Math.max(0, pHpBefore - player.getCurrentHP());
             boolean pCrit = false;
-            if (!battle.getBattleLog().getRecentEntries().isEmpty()) {
-                pCrit = battle.getBattleLog().getRecentEntries().toString().contains("CRITICAL");
-            }
+            // logic crit musuh sama
 
             updateUI(enemy, player, pDamage, pCrit);
             actionMenu.setDisable(false);
         });
-        pause.play(); // .play() dipanggil terpisah dari setOnFinished
+        pause.play();
     }
 
     private void handleBattleEnd(BattleStatus status) {
         actionMenu.setDisable(true);
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Battle Over");
-        alert.setHeaderText(status == BattleStatus.VICTORY ? "VICTORY!" : "DEFEAT");
-        alert.setContentText("Press OK to return to menu.");
+        alert.setTitle("Battle Result");
+        alert.setHeaderText(status == BattleStatus.VICTORY ? "VICTORY!" : "DEFEAT...");
         alert.show();
         alert.setOnHidden(e -> MainFX.primaryStage.setScene(new MainMenuScene().getScene()));
     }
