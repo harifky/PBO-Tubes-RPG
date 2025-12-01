@@ -1,13 +1,10 @@
 package com.elemental.ui;
 
 import com.elemental.factory.EnemyFactory;
-import com.elemental.factory.ItemFactory;
 import com.elemental.model.ActionType;
 import com.elemental.model.Battle;
 import com.elemental.model.BattleAction;
 import com.elemental.model.BattleStatus;
-import com.elemental.model.Inventory;
-import com.elemental.model.Item;
 import com.elemental.model.Skill;
 import com.elemental.model.Status;
 import com.elemental.service.BattleService;
@@ -15,7 +12,6 @@ import com.elemental.service.CharacterService;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 
 /**
@@ -76,8 +72,7 @@ public class BattleScreen {
 
         try {
             int choice = Integer.parseInt(scanner.nextLine().trim());
-            if (choice == 0)
-                return null;
+            if (choice == 0) return null;
 
             com.elemental.model.Character selected = characterService.getCharacter(choice - 1);
             if (selected != null && selected.isAlive()) {
@@ -191,10 +186,11 @@ public class BattleScreen {
     private void displayCharacterStatus(com.elemental.model.Character character) {
         String hpBar = createHPBar(character);
         String mpBar = createMPBar(character);
-        String statusText = character.getStatus() != Status.NORMAL ? " [" + character.getStatus() + "]" : "";
+        String statusText = character.getStatus() != Status.NORMAL ?
+            " [" + character.getStatus() + "]" : "";
 
         System.out.println(String.format("  %s (Lv.%d %s)%s",
-                character.getName(), character.getLevel(), character.getElement(), statusText));
+            character.getName(), character.getLevel(), character.getElement(), statusText));
         System.out.println("    HP: " + hpBar + " " + character.getCurrentHP() + "/" + character.getMaxHP());
         System.out.println("    MP: " + mpBar + " " + character.getCurrentMP() + "/" + character.getMaxMP());
     }
@@ -269,9 +265,8 @@ public class BattleScreen {
         System.out.println("\nWhat will " + player.getName() + " do?");
         System.out.println("1. Attack");
         System.out.println("2. Use Skill");
-        System.out.println("3. Use Item");
-        System.out.println("4. Defend");
-        System.out.println("5. View Stats");
+        System.out.println("3. Defend");
+        System.out.println("4. View Stats");
         System.out.print("Choice: ");
 
         String choice = scanner.nextLine().trim();
@@ -282,10 +277,8 @@ public class BattleScreen {
             case "2":
                 return createSkillAction(player);
             case "3":
-                return createItemAction(player);
-            case "4":
                 return createDefendAction(player);
-            case "5":
+            case "4":
                 displayDetailedStats(player);
                 return selectPlayerAction(player);
             default:
@@ -299,8 +292,7 @@ public class BattleScreen {
      */
     private BattleAction createAttackAction(com.elemental.model.Character player) {
         com.elemental.model.Character target = selectTarget(currentBattle.getEnemyTeam());
-        if (target == null)
-            return null;
+        if (target == null) return null;
 
         BattleAction action = new BattleAction(player, ActionType.ATTACK);
         action.setTarget(target);
@@ -323,8 +315,7 @@ public class BattleScreen {
 
         try {
             int choice = Integer.parseInt(scanner.nextLine().trim());
-            if (choice == 0)
-                return selectPlayerAction(player);
+            if (choice == 0) return selectPlayerAction(player);
 
             Skill selectedSkill = skills.get(choice - 1);
             if (!player.canUseSkill(selectedSkill)) {
@@ -333,8 +324,7 @@ public class BattleScreen {
             }
 
             com.elemental.model.Character target = selectTarget(currentBattle.getEnemyTeam());
-            if (target == null)
-                return selectPlayerAction(player);
+            if (target == null) return selectPlayerAction(player);
 
             BattleAction action = new BattleAction(player, ActionType.SKILL);
             action.setSkill(selectedSkill);
@@ -354,112 +344,6 @@ public class BattleScreen {
     }
 
     /**
-     * FR-ITEM-003: Create item action
-     */
-    private BattleAction createItemAction(com.elemental.model.Character player) {
-        Inventory inventory = player.getInventory();
-        Map<String, Integer> items = inventory.getAllItems();
-
-        if (items.isEmpty()) {
-            System.out.println("❌ No items in inventory!");
-            return selectPlayerAction(player);
-        }
-
-        // Display available items
-        System.out.println("\n=== INVENTORY ===");
-        List<String> itemNames = new ArrayList<>(items.keySet());
-        for (int i = 0; i < itemNames.size(); i++) {
-            String itemName = itemNames.get(i);
-            int qty = items.get(itemName);
-            Item item = ItemFactory.getItem(itemName);
-            System.out.println(String.format("%d. %s (x%d) - %s",
-                    i + 1, itemName, qty, item.getDescription()));
-        }
-        System.out.print("Choice (0 to cancel): ");
-
-        try {
-            int choice = Integer.parseInt(scanner.nextLine().trim());
-            if (choice == 0)
-                return selectPlayerAction(player);
-
-            String selectedItemName = itemNames.get(choice - 1);
-            Item selectedItem = ItemFactory.getItem(selectedItemName);
-
-            // Select target based on item type
-            com.elemental.model.Character target = selectItemTarget(player, selectedItem);
-            if (target == null)
-                return selectPlayerAction(player);
-
-            BattleAction action = new BattleAction(player, ActionType.ITEM);
-            action.setItem(selectedItem);
-            action.setTarget(target);
-            return action;
-        } catch (Exception e) {
-            System.out.println("❌ Invalid input!");
-            return selectPlayerAction(player);
-        }
-    }
-
-    /**
-     * Select target for item based on item target type
-     */
-    private com.elemental.model.Character selectItemTarget(
-            com.elemental.model.Character user,
-            Item item) {
-
-        List<com.elemental.model.Character> validTargets = new ArrayList<>();
-
-        // Get valid targets based on item target type
-        switch (item.getTargetType()) {
-            case ALIVE_ALLY:
-                for (com.elemental.model.Character c : currentBattle.getPlayerTeam()) {
-                    if (c.isAlive()) {
-                        validTargets.add(c);
-                    }
-                }
-                break;
-            case DEAD_ALLY:
-                for (com.elemental.model.Character c : currentBattle.getPlayerTeam()) {
-                    if (!c.isAlive()) {
-                        validTargets.add(c);
-                    }
-                }
-                break;
-            case ANY_ALLY:
-                validTargets.addAll(currentBattle.getPlayerTeam());
-                break;
-        }
-
-        if (validTargets.isEmpty()) {
-            System.out.println("❌ No valid targets for this item!");
-            return null;
-        }
-
-        if (validTargets.size() == 1) {
-            return validTargets.get(0);
-        }
-
-        // Multiple targets - let player choose
-        System.out.println("\n=== SELECT TARGET ===");
-        for (int i = 0; i < validTargets.size(); i++) {
-            com.elemental.model.Character target = validTargets.get(i);
-            String status = target.isAlive() ? String.format("HP: %d/%d", target.getCurrentHP(), target.getMaxHP())
-                    : "DEAD";
-            System.out.println(String.format("%d. %s (%s)",
-                    i + 1, target.getName(), status));
-        }
-        System.out.print("Choice: ");
-
-        try {
-            int choice = Integer.parseInt(scanner.nextLine().trim());
-            return validTargets.get(choice - 1);
-        } catch (Exception e) {
-            System.out.println("❌ Invalid target!");
-            return selectItemTarget(user, item);
-        }
-    }
-
-    /**
      * Select target from enemy team
      */
     private com.elemental.model.Character selectTarget(List<com.elemental.model.Character> enemies) {
@@ -470,15 +354,13 @@ public class BattleScreen {
             }
         }
 
-        if (aliveEnemies.isEmpty())
-            return null;
-        if (aliveEnemies.size() == 1)
-            return aliveEnemies.get(0);
+        if (aliveEnemies.isEmpty()) return null;
+        if (aliveEnemies.size() == 1) return aliveEnemies.get(0);
 
         System.out.println("\n=== SELECT TARGET ===");
         for (int i = 0; i < aliveEnemies.size(); i++) {
             System.out.println((i + 1) + ". " + aliveEnemies.get(i).toString() +
-                    " (HP: " + aliveEnemies.get(i).getCurrentHP() + "/" + aliveEnemies.get(i).getMaxHP() + ")");
+                " (HP: " + aliveEnemies.get(i).getCurrentHP() + "/" + aliveEnemies.get(i).getMaxHP() + ")");
         }
         System.out.print("Choice: ");
 
@@ -499,8 +381,7 @@ public class BattleScreen {
 
         // Simple AI: 70% attack, 30% skill
         com.elemental.model.Character target = getRandomAlivePlayer();
-        if (target == null)
-            return;
+        if (target == null) return;
 
         BattleAction action;
         if (Math.random() < 0.7 || enemy.getSkills().isEmpty()) {
@@ -541,8 +422,7 @@ public class BattleScreen {
             }
         }
 
-        if (alivePlayers.isEmpty())
-            return null;
+        if (alivePlayers.isEmpty()) return null;
         return alivePlayers.get((int) (Math.random() * alivePlayers.size()));
     }
 
