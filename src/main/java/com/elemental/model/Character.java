@@ -33,6 +33,13 @@ public class Character {
     private Map<StatusEffectType, Integer> activeStatusEffects; // Effect type -> remaining turns
     private int baseSpeed; // Store original speed for buff calculations
 
+    // Inventory system
+    private Inventory inventory;
+
+    // Item buff tracking (separate from status effects)
+    private Map<String, Integer> itemBuffs; // Buff type ("ATTACK"/"DEFENSE") -> remaining turns
+    private Map<String, Integer> itemBuffValues; // Buff type -> percentage value
+
     // Constructor
     public Character(String name, CharacterClass characterClass, Element element) {
         this.name = name;
@@ -43,6 +50,9 @@ public class Character {
         this.status = Status.NORMAL;
         this.isDefending = false;
         this.activeStatusEffects = new HashMap<>();
+        this.inventory = new Inventory(); // Initialize with beginner items
+        this.itemBuffs = new HashMap<>();
+        this.itemBuffValues = new HashMap<>();
 
         // Initialize base stats based on class
         initializeBaseStats();
@@ -262,6 +272,57 @@ public class Character {
         return modifiedSpeed;
     }
 
+    // Item buff management
+    public void applyItemBuff(String buffType, int percentage, int duration) {
+        itemBuffs.put(buffType, duration);
+        itemBuffValues.put(buffType, percentage);
+    }
+
+    public boolean hasItemBuff(String buffType) {
+        return itemBuffs.containsKey(buffType) && itemBuffs.get(buffType) > 0;
+    }
+
+    public void processItemBuffs() {
+        List<String> toRemove = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : itemBuffs.entrySet()) {
+            String buffType = entry.getKey();
+            int duration = entry.getValue() - 1;
+
+            if (duration <= 0) {
+                toRemove.add(buffType);
+            } else {
+                itemBuffs.put(buffType, duration);
+            }
+        }
+
+        for (String buffType : toRemove) {
+            itemBuffs.remove(buffType);
+            itemBuffValues.remove(buffType);
+        }
+    }
+
+    public int getModifiedAttack() {
+        int modifiedAttack = this.attack;
+        if (hasItemBuff("ATTACK")) {
+            int percentage = itemBuffValues.get("ATTACK");
+            modifiedAttack = (int) (attack * (1 + percentage / 100.0));
+        }
+        return modifiedAttack;
+    }
+
+    public int getModifiedDefenseWithBuffs() {
+        int modifiedDefense = getModifiedDefense(); // Start with status effect defense
+        if (hasItemBuff("DEFENSE")) {
+            int percentage = itemBuffValues.get("DEFENSE");
+            modifiedDefense = (int) (defense * (1 + percentage / 100.0));
+        }
+        return modifiedDefense;
+    }
+
+    public Map<String, Integer> getActiveItemBuffs() {
+        return new HashMap<>(itemBuffs);
+    }
+
     // Getters
     public String getName() {
         return name;
@@ -319,6 +380,10 @@ public class Character {
         return new ArrayList<>(skills);
     }
 
+    public Inventory getInventory() {
+        return inventory;
+    }
+
     // Setters
     public void setStatus(Status status) {
         this.status = status;
@@ -338,16 +403,15 @@ public class Character {
     // Display methods
     public String getStatsPreview() {
         return String.format(
-            "=== %s ===\n" +
-            "Class: %s | Element: %s | Level: %d\n" +
-            "HP: %d/%d | MP: %d/%d\n" +
-            "ATK: %d | DEF: %d | SPD: %d\n" +
-            "EXP: %d/%d | Status: %s",
-            name, characterClass, element, level,
-            currentHP, maxHP, currentMP, maxMP,
-            attack, defense, speed,
-            experience, getExperienceForNextLevel(), status
-        );
+                "=== %s ===\n" +
+                        "Class: %s | Element: %s | Level: %d\n" +
+                        "HP: %d/%d | MP: %d/%d\n" +
+                        "ATK: %d | DEF: %d | SPD: %d\n" +
+                        "EXP: %d/%d | Status: %s",
+                name, characterClass, element, level,
+                currentHP, maxHP, currentMP, maxMP,
+                attack, defense, speed,
+                experience, getExperienceForNextLevel(), status);
     }
 
     @Override

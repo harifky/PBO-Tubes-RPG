@@ -54,6 +54,14 @@ public class BattleLog {
         log(String.format("%s used %s! (-%d MP)", user.getName(), skill.getName(), skill.getMpCost()));
     }
 
+    public void logItemUse(Character user, Item item, Character target) {
+        if (user == target) {
+            log(String.format("%s used %s!", user.getName(), item.getName()));
+        } else {
+            log(String.format("%s used %s on %s!", user.getName(), item.getName(), target.getName()));
+        }
+    }
+
     public void logHeal(Character healer, Character target, int amount) {
         log(String.format("%s healed %s for %d HP!", healer.getName(), target.getName(), amount));
     }
@@ -76,12 +84,12 @@ public class BattleLog {
 
     public void logHPChange(Character character, int oldHP, int newHP) {
         log(String.format("%s: %d/%d HP -> %d/%d HP",
-            character.getName(), oldHP, character.getMaxHP(), newHP, character.getMaxHP()));
+                character.getName(), oldHP, character.getMaxHP(), newHP, character.getMaxHP()));
     }
 
     public void logMPChange(Character character, int oldMP, int newMP) {
         log(String.format("%s: %d/%d MP -> %d/%d MP",
-            character.getName(), oldMP, character.getMaxMP(), newMP, character.getMaxMP()));
+                character.getName(), oldMP, character.getMaxMP(), newMP, character.getMaxMP()));
     }
 
     public void logElementAdvantage(String message) {
@@ -141,4 +149,3 @@ public class BattleLog {
         void onLogUpdate(String message);
     }
 }
-
