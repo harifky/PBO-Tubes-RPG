@@ -21,10 +21,10 @@ public class MainMenu {
         this.scanner = new Scanner(System.in);
         this.characterService = new CharacterService();
         this.battleService = new BattleService();
-        this.saveLoadService = new SaveLoadService();
+        this.saveLoadService = new SaveLoadService(characterService);
 
         this.characterManagement = new CharacterManagement(characterService, scanner);
-        this.battleScreen = new BattleScreen(battleService, characterService, scanner);
+        this.battleScreen = new BattleScreen(battleService, characterService, saveLoadService, scanner);
     }
 
     public void show() {
@@ -95,14 +95,91 @@ public class MainMenu {
         battleScreen.startBattle();
     }
 
+    /**
+     * FR-SAVE-001: Save game to slot
+     */
     private void saveGame() {
-        System.out.println("\n[Save System - Coming in Phase 3]");
-        System.out.println("This feature will be available soon!");
+        System.out.println("\n╔══════════════════════════════════════════════╗");
+        System.out.println("║              SAVE GAME                       ║");
+        System.out.println("╚══════════════════════════════════════════════╝");
+
+        displaySaveSlots();
+
+        System.out.print("\nSelect slot (1-3, 0=cancel): ");
+        try {
+            int slot = Integer.parseInt(scanner.nextLine().trim());
+            if (slot == 0)
+                return;
+
+            if (slot < 1 || slot > 3) {
+                System.out.println("❌ Invalid slot!");
+                return;
+            }
+
+            if (saveLoadService.saveSlotExists(slot)) {
+                System.out.print("⚠️  Overwrite slot " + slot + "? (y/n): ");
+                if (!scanner.nextLine().trim().equalsIgnoreCase("y")) {
+                    System.out.println("Cancelled.");
+                    return;
+                }
+            }
+
+            saveLoadService.saveGame(slot);
+            System.out.println("\nPress Enter...");
+            scanner.nextLine();
+
+        } catch (NumberFormatException e) {
+            System.out.println("❌ Invalid input!");
+        } catch (Exception e) {
+            System.out.println("❌ Save failed: " + e.getMessage());
+        }
     }
 
+    /**
+     * FR-SAVE-002: Load game from slot
+     */
     private void loadGame() {
-        System.out.println("\n[Load System - Coming in Phase 3]");
-        System.out.println("This feature will be available soon!");
+        System.out.println("\n╔══════════════════════════════════════════════╗");
+        System.out.println("║              LOAD GAME                       ║");
+        System.out.println("╚══════════════════════════════════════════════╝");
+
+        displaySaveSlots();
+
+        System.out.print("\nSelect slot (1-3, 0=cancel, D=delete): ");
+        String input = scanner.nextLine().trim();
+
+        if (input.equalsIgnoreCase("d")) {
+            handleDeleteSave();
+            return;
+        }
+
+        try {
+            int slot = Integer.parseInt(input);
+            if (slot == 0)
+                return;
+
+            if (slot < 1 || slot > 3) {
+                System.out.println("❌ Invalid slot!");
+                return;
+            }
+
+            if (!saveLoadService.saveSlotExists(slot)) {
+                System.out.println("❌ Slot " + slot + " is empty!");
+                return;
+            }
+
+            var saveData = saveLoadService.loadGame(slot);
+            saveLoadService.applySaveData(saveData);
+
+            System.out.println("\n✅ Game loaded!");
+            System.out.println("Press Enter...");
+            scanner.nextLine();
+
+        } catch (NumberFormatException e) {
+            System.out.println("❌ Invalid input!");
+        } catch (Exception e) {
+            System.out.println("❌ Load failed: " + e.getMessage());
+        }
     }
 
     private void displayAbout() {
@@ -310,5 +387,49 @@ public class MainMenu {
 
     public SaveLoadService getSaveLoadService() {
         return saveLoadService;
+    }
+
+    /**
+     * Display all save slots with metadata
+     */
+    private void displaySaveSlots() {
+        var slots = saveLoadService.getAllSaveMetadata();
+        System.out.println();
+        for (int i = 0; i < slots.size(); i++) {
+            System.out.println(slots.get(i).getDisplayString());
+            if (i < slots.size() - 1)
+                System.out.println();
+        }
+    }
+
+    /**
+     * FR-SAVE-003: Delete save with confirmation
+     */
+    private void handleDeleteSave() {
+        System.out.print("\nSlot to delete (1-3, 0=cancel): ");
+        try {
+            int slot = Integer.parseInt(scanner.nextLine().trim());
+            if (slot == 0)
+                return;
+
+            if (slot < 1 || slot > 3) {
+                System.out.println("❌ Invalid slot!");
+                return;
+            }
+
+            if (!saveLoadService.saveSlotExists(slot)) {
+                System.out.println("❌ Slot empty!");
+                return;
+            }
+
+            System.out.print("⚠️  Delete slot " + slot + "? Cannot undo! (y/n): ");
+            if (scanner.nextLine().trim().equalsIgnoreCase("y")) {
+                saveLoadService.deleteSave(slot);
+                System.out.println("\nPress Enter...");
+                scanner.nextLine();
+            }
+        } catch (Exception e) {
+            System.out.println("❌ Error: " + e.getMessage());
+        }
     }
 }

@@ -11,6 +11,7 @@ import com.elemental.model.Skill;
 import com.elemental.model.Status;
 import com.elemental.service.BattleService;
 import com.elemental.service.CharacterService;
+import com.elemental.service.SaveLoadService;
 import com.elemental.strategy.AIStrategy;
 import com.elemental.strategy.AIStrategyFactory;
 
@@ -24,12 +25,19 @@ import java.util.Scanner;
 public class BattleScreen {
     private BattleService battleService;
     private CharacterService characterService;
+    private SaveLoadService saveLoadService;
     private Scanner scanner;
     private Battle currentBattle;
 
     public BattleScreen(BattleService battleService, CharacterService characterService, Scanner scanner) {
+        this(battleService, characterService, null, scanner);
+    }
+
+    public BattleScreen(BattleService battleService, CharacterService characterService,
+            SaveLoadService saveLoadService, Scanner scanner) {
         this.battleService = battleService;
         this.characterService = characterService;
+        this.saveLoadService = saveLoadService;
         this.scanner = scanner;
     }
 
@@ -76,7 +84,8 @@ public class BattleScreen {
 
         try {
             int choice = Integer.parseInt(scanner.nextLine().trim());
-            if (choice == 0) return null;
+            if (choice == 0)
+                return null;
 
             com.elemental.model.Character selected = characterService.getCharacter(choice - 1);
             if (selected != null && selected.isAlive()) {
@@ -190,11 +199,10 @@ public class BattleScreen {
     private void displayCharacterStatus(com.elemental.model.Character character) {
         String hpBar = createHPBar(character);
         String mpBar = createMPBar(character);
-        String statusText = character.getStatus() != Status.NORMAL ?
-            " [" + character.getStatus() + "]" : "";
+        String statusText = character.getStatus() != Status.NORMAL ? " [" + character.getStatus() + "]" : "";
 
         System.out.println(String.format("  %s (Lv.%d %s)%s",
-            character.getName(), character.getLevel(), character.getElement(), statusText));
+                character.getName(), character.getLevel(), character.getElement(), statusText));
         System.out.println("    HP: " + hpBar + " " + character.getCurrentHP() + "/" + character.getMaxHP());
         System.out.println("    MP: " + mpBar + " " + character.getCurrentMP() + "/" + character.getMaxMP());
     }
@@ -296,7 +304,8 @@ public class BattleScreen {
      */
     private BattleAction createAttackAction(com.elemental.model.Character player) {
         com.elemental.model.Character target = selectTarget(currentBattle.getEnemyTeam());
-        if (target == null) return null;
+        if (target == null)
+            return null;
 
         BattleAction action = new BattleAction(player, ActionType.ATTACK);
         action.setTarget(target);
@@ -319,7 +328,8 @@ public class BattleScreen {
 
         try {
             int choice = Integer.parseInt(scanner.nextLine().trim());
-            if (choice == 0) return selectPlayerAction(player);
+            if (choice == 0)
+                return selectPlayerAction(player);
 
             Skill selectedSkill = skills.get(choice - 1);
             if (!player.canUseSkill(selectedSkill)) {
@@ -328,7 +338,8 @@ public class BattleScreen {
             }
 
             com.elemental.model.Character target = selectTarget(currentBattle.getEnemyTeam());
-            if (target == null) return selectPlayerAction(player);
+            if (target == null)
+                return selectPlayerAction(player);
 
             BattleAction action = new BattleAction(player, ActionType.SKILL);
             action.setSkill(selectedSkill);
@@ -358,13 +369,15 @@ public class BattleScreen {
             }
         }
 
-        if (aliveEnemies.isEmpty()) return null;
-        if (aliveEnemies.size() == 1) return aliveEnemies.get(0);
+        if (aliveEnemies.isEmpty())
+            return null;
+        if (aliveEnemies.size() == 1)
+            return aliveEnemies.get(0);
 
         System.out.println("\n=== SELECT TARGET ===");
         for (int i = 0; i < aliveEnemies.size(); i++) {
             System.out.println((i + 1) + ". " + aliveEnemies.get(i).toString() +
-                " (HP: " + aliveEnemies.get(i).getCurrentHP() + "/" + aliveEnemies.get(i).getMaxHP() + ")");
+                    " (HP: " + aliveEnemies.get(i).getCurrentHP() + "/" + aliveEnemies.get(i).getMaxHP() + ")");
         }
         System.out.print("Choice: ");
 
@@ -397,9 +410,9 @@ public class BattleScreen {
 
         // AI makes decision
         BattleAction action = ai.decideAction(
-            enemy,                           // Current enemy character
-            currentBattle.getEnemyTeam(),    // Enemy team (allies for AI)
-            currentBattle.getPlayerTeam()    // Player team (enemies for AI)
+                enemy, // Current enemy character
+                currentBattle.getEnemyTeam(), // Enemy team (allies for AI)
+                currentBattle.getPlayerTeam() // Player team (enemies for AI)
         );
 
         // Display AI decision (if detailed log enabled)
@@ -422,7 +435,7 @@ public class BattleScreen {
         // 2. Check for special cases
         // TODO: Add boss flag check when implemented
         // if (enemy.isBoss()) {
-        //     return AIDifficulty.HARD;  // Boss always uses Hard AI
+        // return AIDifficulty.HARD; // Boss always uses Hard AI
         // }
 
         // 3. Get enemy level for context
@@ -449,7 +462,7 @@ public class BattleScreen {
                 // Hard mode requested - always Hard
                 // But could downgrade for very low level enemies (optional)
                 if (enemyLevel <= 1) {
-                    return AIDifficulty.EASY;  // Tutorial enemies
+                    return AIDifficulty.EASY; // Tutorial enemies
                 }
                 return AIDifficulty.HARD;
 
@@ -465,12 +478,12 @@ public class BattleScreen {
         switch (action.getActionType()) {
             case ATTACK:
                 System.out.println("  💥 " + enemy.getName() + " attacks " +
-                                 action.getTarget().getName() + "!");
+                        action.getTarget().getName() + "!");
                 break;
             case SKILL:
                 System.out.println("  ✨ " + enemy.getName() + " uses " +
-                                 action.getSkill().getName() + " on " +
-                                 action.getTarget().getName() + "!");
+                        action.getSkill().getName() + " on " +
+                        action.getTarget().getName() + "!");
                 break;
             case DEFEND:
                 System.out.println("  🛡️  " + enemy.getName() + " takes a defensive stance!");
@@ -489,7 +502,8 @@ public class BattleScreen {
             }
         }
 
-        if (alivePlayers.isEmpty()) return null;
+        if (alivePlayers.isEmpty())
+            return null;
         return alivePlayers.get((int) (Math.random() * alivePlayers.size()));
     }
 
@@ -505,19 +519,26 @@ public class BattleScreen {
     }
 
     /**
-     * Display battle result
+     * Display battle result and update history
      */
     private void displayBattleResult(BattleStatus status) {
-        System.out.println("\n╔══════��═════════════════════════════════════════╗");
+        System.out.println("\n╔══════════════════════════════════════════════════╗");
         if (status == BattleStatus.VICTORY) {
             System.out.println("║              ⚔️  VICTORY! ⚔️                    ║");
         } else {
             System.out.println("║              💀  DEFEAT  💀                    ║");
         }
-        System.out.println("╚════════════════════════════════════════════════╝");
+        System.out.println("╚══════════════════════════════════════════════════╝");
 
         // Display final log
         displayBattleLog();
+
+        // Update battle history and auto-save
+        if (saveLoadService != null) {
+            int enemiesDefeated = (status == BattleStatus.VICTORY) ? currentBattle.getEnemyTeam().size() : 0;
+            saveLoadService.getBattleHistory().recordBattle(status, enemiesDefeated);
+            saveLoadService.autoSave();
+        }
 
         System.out.println("\nPress Enter to return to main menu...");
         scanner.nextLine();

@@ -1,0 +1,54 @@
+{
+  "saveId": "68e2d541-ab8a-43a9-bd40-97f620d21d3d",
+  "savedAt": "2025-12-01T12:16:37.7755403",
+  "saveVersion": 1,
+  "characters": [
+    {
+      "name": "iky",
+      "characterClass": "WARRIOR",
+      "element": "FIRE",
+      "level": 2,
+      "experience": 0,
+      "currentHP": 130,
+      "maxHP": 130,
+      "currentMP": 55,
+      "maxMP": 55,
+      "attack": 28,
+      "defense": 22,
+      "speed": 16,
+      "status": "NORMAL"
+    },
+    {
+      "name": "iky2",
+      "characterClass": "WARRIOR",
+      "element": "FIRE",
+      "level": 1,
+      "experience": 0,
+      "currentHP": 120,
+      "maxHP": 120,
+      "currentMP": 50,
+      "maxMP": 50,
+      "attack": 25,
+      "defense": 20,
+      "speed": 15,
+      "status": "NORMAL"
+    }
+  ],
+  "battleHistory": {
+    "totalBattles": 1,
+    "wins": 1,
+    "losses": 0,
+    "totalEnemiesDefeated": 1
+  },
+  "settings": {
+    "aiDifficulty": "MEDIUM",
+    "showDetailedLog": true
+  },
+  "metadata": {
+    "slotName": "Save Slot 1",
+    "savedAt": "2025-12-01T12:16:37.7755403",
+    "totalBattles": 1,
+    "highestLevel": 2,
+    "highestLevelCharName": "iky"
+  }
+}

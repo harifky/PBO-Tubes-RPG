@@ -81,5 +81,19 @@ public class GameSettings {
         sb.append("Auto Progress:    ").append(autoProgress ? "ON" : "OFF").append("\n");
         return sb.toString();
     }
-}
 
+    /**
+     * FR-SAVE-001: Convert to DTO for saving
+     */
+    public GameSettingsData toData() {
+        return new GameSettingsData(aiDifficulty, showDetailedLog);
+    }
+
+    /**
+     * FR-SAVE-002: Load from DTO
+     */
+    public void loadFromData(GameSettingsData data) {
+        this.aiDifficulty = data.getAiDifficulty();
+        this.showDetailedLog = data.isShowDetailedLog();
+    }
+}
