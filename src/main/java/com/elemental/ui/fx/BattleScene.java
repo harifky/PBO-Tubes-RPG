@@ -78,7 +78,6 @@ public class BattleScene {
 
         // CSS Baru: Background Image + Border Kayu
         arenaContainer.setStyle(
-                "-fx-background-image: url('/assets/battle_bg.jpg');" +
                         "-fx-background-size: cover;" +
                         "-fx-background-position: center center;" +
                         "-fx-border-color: #5c4033;" +

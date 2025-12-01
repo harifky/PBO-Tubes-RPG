@@ -11,36 +11,58 @@ public class MainMenuScene {
     private Scene scene;
 
     public MainMenuScene() {
-        VBox layout = new VBox(20);
+        VBox layout = new VBox(15); // Jarak antar tombol 15px
         layout.setAlignment(Pos.CENTER);
-        layout.setStyle("-fx-background-color: #2b2b2b;"); // Dark BG
+        layout.getStyleClass().add("root");
 
         Label title = new Label("ELEMENTAL BATTLE ARENA");
         title.getStyleClass().add("game-title");
 
-        Button btnCharMgmt = new Button("Character Management");
-        btnCharMgmt.getStyleClass().add("button-medieval");
-        btnCharMgmt.setPrefWidth(200);
+        // Tombol-tombol Menu
+        Button btnCharMgmt = createMenuButton("Character Management");
         btnCharMgmt.setOnAction(e -> {
             MainFX.primaryStage.getScene().setRoot(new CharacterScene().getLayout());
         });
 
-        Button btnBattle = new Button("Start Battle");
-        btnBattle.getStyleClass().add("button-medieval");
-        btnBattle.setPrefWidth(200);
+        Button btnBattle = createMenuButton("Start Battle");
         btnBattle.setOnAction(e -> {
             MainFX.primaryStage.getScene().setRoot(new BattleSetupScene().getLayout());
         });
 
-        Button btnExit = new Button("Exit Game");
-        btnExit.getStyleClass().add("button-medieval");
-        btnExit.setPrefWidth(200);
+        // BARU: Tombol Save
+        Button btnSave = createMenuButton("Save Game");
+        btnSave.setOnAction(e -> {
+            // Buka SaveLoadScene dengan mode Save (true)
+            MainFX.primaryStage.getScene().setRoot(new SaveLoadScene(true).getLayout());
+        });
+
+        // BARU: Tombol Load
+        Button btnLoad = createMenuButton("Load Game");
+        btnLoad.setOnAction(e -> {
+            // Buka SaveLoadScene dengan mode Load (false)
+            MainFX.primaryStage.getScene().setRoot(new SaveLoadScene(false).getLayout());
+        });
+
+        // BARU: Tombol Settings
+        Button btnSettings = createMenuButton("Settings");
+        btnSettings.setOnAction(e -> {
+            MainFX.primaryStage.getScene().setRoot(new SettingsScene().getLayout());
+        });
+
+        Button btnExit = createMenuButton("Exit Game");
         btnExit.setOnAction(e -> MainFX.primaryStage.close());
 
-        layout.getChildren().addAll(title, btnCharMgmt, btnBattle, btnExit);
+        layout.getChildren().addAll(title, btnCharMgmt, btnBattle, btnSave, btnLoad, btnSettings, btnExit);
 
         this.scene = new Scene(layout, 800, 600);
         this.scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
+    }
+
+    private Button createMenuButton(String text) {
+        Button btn = new Button(text);
+        btn.getStyleClass().add("button-medieval");
+        btn.setPrefWidth(250);
+        return btn;
     }
 
     public Scene getScene() {

@@ -2,13 +2,18 @@ package com.elemental.ui;
 
 import com.elemental.factory.EnemyFactory;
 import com.elemental.model.ActionType;
+import com.elemental.model.AIDifficulty;
 import com.elemental.model.Battle;
 import com.elemental.model.BattleAction;
 import com.elemental.model.BattleStatus;
+import com.elemental.model.GameSettings;
 import com.elemental.model.Skill;
 import com.elemental.model.Status;
 import com.elemental.service.BattleService;
 import com.elemental.service.CharacterService;
+import com.elemental.service.SaveLoadService;
+import com.elemental.strategy.AIStrategy;
+import com.elemental.strategy.AIStrategyFactory;
 
 import java.util.ArrayList;
 import java.util.List;
