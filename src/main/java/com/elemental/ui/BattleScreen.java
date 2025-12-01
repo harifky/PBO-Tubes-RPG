@@ -2,13 +2,17 @@ package com.elemental.ui;
 
 import com.elemental.factory.EnemyFactory;
 import com.elemental.model.ActionType;
+import com.elemental.model.AIDifficulty;
 import com.elemental.model.Battle;
 import com.elemental.model.BattleAction;
 import com.elemental.model.BattleStatus;
+import com.elemental.model.GameSettings;
 import com.elemental.model.Skill;
 import com.elemental.model.Status;
 import com.elemental.service.BattleService;
 import com.elemental.service.CharacterService;
+import com.elemental.strategy.AIStrategy;
+import com.elemental.strategy.AIStrategyFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -374,41 +378,104 @@ public class BattleScreen {
     }
 
     /**
-     * Handle enemy turn (simple AI)
+     * Handle enemy turn using Phase 3 AI System (Hybrid)
      */
     private void handleEnemyTurn(com.elemental.model.Character enemy) {
         System.out.println("\n>>> " + enemy.getName() + "'s turn! <<<");
 
-        // Simple AI: 70% attack, 30% skill
-        com.elemental.model.Character target = getRandomAlivePlayer();
-        if (target == null) return;
+        // PHASE 3: AI Hybrid System
+        // Get AI difficulty using hybrid approach
+        AIDifficulty difficulty = getAIDifficultyHybrid(enemy);
 
-        BattleAction action;
-        if (Math.random() < 0.7 || enemy.getSkills().isEmpty()) {
-            // Basic attack
-            action = new BattleAction(enemy, ActionType.ATTACK);
-            action.setTarget(target);
-        } else {
-            // Use random skill
-            List<Skill> usableSkills = new ArrayList<>();
-            for (Skill skill : enemy.getSkills()) {
-                if (enemy.canUseSkill(skill)) {
-                    usableSkills.add(skill);
-                }
-            }
+        // Create AI strategy based on difficulty
+        AIStrategy ai = AIStrategyFactory.create(difficulty);
 
-            if (!usableSkills.isEmpty()) {
-                Skill randomSkill = usableSkills.get((int) (Math.random() * usableSkills.size()));
-                action = new BattleAction(enemy, ActionType.SKILL);
-                action.setSkill(randomSkill);
-                action.setTarget(target);
-            } else {
-                action = new BattleAction(enemy, ActionType.ATTACK);
-                action.setTarget(target);
-            }
+        // Display AI difficulty (if detailed log enabled)
+        if (GameSettings.getInstance().isShowDetailedLog()) {
+            System.out.println("  [AI Level: " + difficulty + "]");
         }
 
+        // AI makes decision
+        BattleAction action = ai.decideAction(
+            enemy,                           // Current enemy character
+            currentBattle.getEnemyTeam(),    // Enemy team (allies for AI)
+            currentBattle.getPlayerTeam()    // Player team (enemies for AI)
+        );
+
+        // Display AI decision (if detailed log enabled)
+        if (GameSettings.getInstance().isShowDetailedLog()) {
+            displayAIDecision(enemy, action);
+        }
+
+        // Execute the AI's chosen action
         currentBattle.executeAction(action);
+    }
+
+    /**
+     * HYBRID AI Difficulty Selection
+     * Combines player preference with contextual adjustments
+     */
+    private AIDifficulty getAIDifficultyHybrid(com.elemental.model.Character enemy) {
+        // 1. Get base difficulty from player settings
+        AIDifficulty baseDifficulty = GameSettings.getInstance().getAIDifficulty();
+
+        // 2. Check for special cases
+        // TODO: Add boss flag check when implemented
+        // if (enemy.isBoss()) {
+        //     return AIDifficulty.HARD;  // Boss always uses Hard AI
+        // }
+
+        // 3. Get enemy level for context
+        int enemyLevel = enemy.getLevel();
+
+        // 4. Apply hybrid logic based on base difficulty
+        switch (baseDifficulty) {
+            case EASY:
+                // Respect player choice - stay Easy
+                return AIDifficulty.EASY;
+
+            case MEDIUM:
+                // Auto-scale within Medium range
+                if (enemyLevel >= 10) {
+                    // High level enemy → upgrade to Hard
+                    return AIDifficulty.HARD;
+                } else if (enemyLevel <= 2) {
+                    // Low level enemy → downgrade to Easy
+                    return AIDifficulty.EASY;
+                }
+                return AIDifficulty.MEDIUM;
+
+            case HARD:
+                // Hard mode requested - always Hard
+                // But could downgrade for very low level enemies (optional)
+                if (enemyLevel <= 1) {
+                    return AIDifficulty.EASY;  // Tutorial enemies
+                }
+                return AIDifficulty.HARD;
+
+            default:
+                return AIDifficulty.MEDIUM;
+        }
+    }
+
+    /**
+     * Display AI decision for transparency (optional, for detailed log)
+     */
+    private void displayAIDecision(com.elemental.model.Character enemy, BattleAction action) {
+        switch (action.getActionType()) {
+            case ATTACK:
+                System.out.println("  💥 " + enemy.getName() + " attacks " +
+                                 action.getTarget().getName() + "!");
+                break;
+            case SKILL:
+                System.out.println("  ✨ " + enemy.getName() + " uses " +
+                                 action.getSkill().getName() + " on " +
+                                 action.getTarget().getName() + "!");
+                break;
+            case DEFEND:
+                System.out.println("  🛡️  " + enemy.getName() + " takes a defensive stance!");
+                break;
+        }
     }
 
     /**

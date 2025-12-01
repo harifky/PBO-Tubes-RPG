@@ -1,5 +1,7 @@
 package com.elemental.ui;
 
+import com.elemental.model.AIDifficulty;
+import com.elemental.model.GameSettings;
 import com.elemental.service.CharacterService;
 import com.elemental.service.BattleService;
 import com.elemental.service.SaveLoadService;
@@ -41,12 +43,15 @@ public class MainMenu {
                     startBattle();
                     break;
                 case "3":
-                    saveGame();
+                    showSettings();
                     break;
                 case "4":
-                    loadGame();
+                    saveGame();
                     break;
                 case "5":
+                    loadGame();
+                    break;
+                case "6":
                     displayAbout();
                     break;
                 case "0":
@@ -77,9 +82,10 @@ public class MainMenu {
         System.out.println("╚══════════════════════════════════════════════╝");
         System.out.println("1. Character Management");
         System.out.println("2. Start Battle");
-        System.out.println("3. Save Game");
-        System.out.println("4. Load Game");
-        System.out.println("5. About");
+        System.out.println("3. Game Settings");
+        System.out.println("4. Save Game");
+        System.out.println("5. Load Game");
+        System.out.println("6. About");
         System.out.println("0. Exit Game");
         System.out.println("───────────────────────────────────────────────");
         System.out.print("Enter your choice: ");
@@ -122,6 +128,175 @@ public class MainMenu {
         System.out.println("• Decorator Pattern - Status effects");
         System.out.println();
         System.out.println("Press Enter to continue...");
+        scanner.nextLine();
+    }
+
+    /**
+     * Display and manage game settings
+     */
+    private void showSettings() {
+        boolean inSettings = true;
+
+        while (inSettings) {
+            // Display current settings
+            System.out.println("\n" + GameSettings.getInstance().displaySettings());
+
+            // Display menu
+            System.out.println("\n╔══════════════════════════════════════════════╗");
+            System.out.println("║            SETTINGS MENU                     ║");
+            System.out.println("╚══════════════════════════════════════════════╝");
+            System.out.println("1. Change AI Difficulty");
+            System.out.println("2. Toggle Detailed Battle Log");
+            System.out.println("3. Toggle Auto Progress");
+            System.out.println("4. Reset to Defaults");
+            System.out.println("0. Back to Main Menu");
+            System.out.println("───────────────────────────────────────────────");
+            System.out.print("Enter your choice: ");
+
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1":
+                    changeAIDifficulty();
+                    break;
+                case "2":
+                    toggleDetailedLog();
+                    break;
+                case "3":
+                    toggleAutoProgress();
+                    break;
+                case "4":
+                    resetSettings();
+                    break;
+                case "0":
+                    inSettings = false;
+                    break;
+                default:
+                    System.out.println("Invalid choice! Please try again.");
+            }
+        }
+    }
+
+    /**
+     * Change AI Difficulty setting
+     */
+    private void changeAIDifficulty() {
+        System.out.println("\n╔══════════════════════════════════════════════╗");
+        System.out.println("║          SELECT AI DIFFICULTY                ║");
+        System.out.println("╚══════════════════════════════════════════════╝");
+        System.out.println();
+        System.out.println("1. EASY   - Random AI, simple decisions");
+        System.out.println("   • 60% basic attack (random target)");
+        System.out.println("   • 30% random skill usage");
+        System.out.println("   • 10% defend");
+        System.out.println("   • No strategic thinking");
+        System.out.println();
+        System.out.println("2. MEDIUM - Strategic AI, basic tactics");
+        System.out.println("   • HP/MP management");
+        System.out.println("   • Targets lowest HP enemies");
+        System.out.println("   • Considers element advantage");
+        System.out.println("   • Defensive when HP < 30%");
+        System.out.println();
+        System.out.println("3. HARD   - Advanced AI, adaptive strategies");
+        System.out.println("   • Threat-based targeting");
+        System.out.println("   • Resource optimization");
+        System.out.println("   • Counter-strategy (adapts to player)");
+        System.out.println("   • Early game buffs & finishing blows");
+        System.out.println();
+        System.out.println("0. Cancel");
+        System.out.println("───────────────────────────────────────────────");
+        System.out.println("Current: " + GameSettings.getInstance().getAIDifficulty());
+        System.out.print("\nEnter your choice: ");
+
+        String choice = scanner.nextLine().trim();
+
+        switch (choice) {
+            case "1":
+                GameSettings.getInstance().setAIDifficulty(AIDifficulty.EASY);
+                System.out.println("\n✅ AI Difficulty set to EASY");
+                System.out.println("💡 Good for learning game mechanics!");
+                break;
+            case "2":
+                GameSettings.getInstance().setAIDifficulty(AIDifficulty.MEDIUM);
+                System.out.println("\n✅ AI Difficulty set to MEDIUM");
+                System.out.println("💡 Balanced challenge with strategic AI!");
+                break;
+            case "3":
+                GameSettings.getInstance().setAIDifficulty(AIDifficulty.HARD);
+                System.out.println("\n✅ AI Difficulty set to HARD");
+                System.out.println("💡 Prepare for tactical combat!");
+                break;
+            case "0":
+                System.out.println("Cancelled.");
+                break;
+            default:
+                System.out.println("❌ Invalid choice!");
+        }
+
+        if (!choice.equals("0")) {
+            System.out.println("\nPress Enter to continue...");
+            scanner.nextLine();
+        }
+    }
+
+    /**
+     * Toggle detailed battle log
+     */
+    private void toggleDetailedLog() {
+        GameSettings settings = GameSettings.getInstance();
+        settings.setShowDetailedLog(!settings.isShowDetailedLog());
+
+        String status = settings.isShowDetailedLog() ? "ON" : "OFF";
+        System.out.println("\n✅ Detailed Battle Log: " + status);
+
+        if (settings.isShowDetailedLog()) {
+            System.out.println("💡 You will see detailed AI decisions and calculations");
+        } else {
+            System.out.println("💡 Only basic battle messages will be shown");
+        }
+
+        System.out.println("\nPress Enter to continue...");
+        scanner.nextLine();
+    }
+
+    /**
+     * Toggle auto progress
+     */
+    private void toggleAutoProgress() {
+        GameSettings settings = GameSettings.getInstance();
+        settings.setAutoProgress(!settings.isAutoProgress());
+
+        String status = settings.isAutoProgress() ? "ON" : "OFF";
+        System.out.println("\n✅ Auto Progress: " + status);
+
+        if (settings.isAutoProgress()) {
+            System.out.println("💡 Battle will automatically continue after each action");
+        } else {
+            System.out.println("💡 You need to press Enter to continue after each action");
+        }
+
+        System.out.println("\nPress Enter to continue...");
+        scanner.nextLine();
+    }
+
+    /**
+     * Reset all settings to defaults
+     */
+    private void resetSettings() {
+        System.out.print("\n⚠️  Are you sure you want to reset all settings to defaults? (y/n): ");
+        String confirm = scanner.nextLine().trim().toLowerCase();
+
+        if (confirm.equals("y") || confirm.equals("yes")) {
+            GameSettings.getInstance().resetToDefaults();
+            System.out.println("\n✅ All settings reset to defaults!");
+            System.out.println("  • AI Difficulty: MEDIUM");
+            System.out.println("  • Detailed Log: ON");
+            System.out.println("  • Auto Progress: OFF");
+        } else {
+            System.out.println("Cancelled.");
+        }
+
+        System.out.println("\nPress Enter to continue...");
         scanner.nextLine();
     }
 
