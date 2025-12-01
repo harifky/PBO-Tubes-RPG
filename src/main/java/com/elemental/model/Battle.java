@@ -54,8 +54,7 @@ public class Battle {
      */
     private void calculateTurnOrder() {
         turnOrder = new PriorityQueue<>(
-            Comparator.comparingInt(Character::getModifiedSpeed).reversed()
-        );
+                Comparator.comparingInt(Character::getModifiedSpeed).reversed());
 
         // Add all alive characters
         for (Character c : playerTeam) {
@@ -153,8 +152,7 @@ public class Battle {
         battleLog.logDamage(attacker, defender, damage, isCritical);
 
         String elementAdvantage = DamageCalculator.getElementAdvantage(
-            attacker.getElement(), defender.getElement()
-        );
+                attacker.getElement(), defender.getElement());
         if (!elementAdvantage.isEmpty()) {
             battleLog.logElementAdvantage(elementAdvantage);
         }
@@ -191,8 +189,7 @@ public class Battle {
                 battleLog.logDamage(user, target, damage, isCritical);
 
                 String elementAdvantage = DamageCalculator.getElementAdvantage(
-                    user.getElement(), target.getElement()
-                );
+                        user.getElement(), target.getElement());
                 if (!elementAdvantage.isEmpty()) {
                     battleLog.logElementAdvantage(elementAdvantage);
                 }
@@ -277,20 +274,72 @@ public class Battle {
 
     /**
      * Execute item usage
+     * FR-ITEM-003: Item usage rules
      */
     private void executeItem(Character user, Character target, Item item) {
         if (item == null) {
             battleLog.log("No item selected!");
             return;
         }
-        battleLog.log("Item usage not yet implemented.");
+
+        // Check if user has item in inventory
+        if (!user.getInventory().hasItem(item.getName())) {
+            battleLog.log(item.getName() + " not available!");
+            return;
+        }
+
+        // Check if target is valid for this item
+        if (!item.canUse(target)) {
+            String reason = target.isAlive() ? "invalid target" : "cannot use on dead ally";
+            if (item.getTargetType() == ItemTarget.DEAD_ALLY && target.isAlive()) {
+                reason = "can only be used on dead allies";
+            }
+            battleLog.log("Cannot use " + item.getName() + " - " + reason + "!");
+            return;
+        }
+
+        // Use item from inventory (FR-ITEM-003: quantity decreases)
+        if (user.getInventory().useItem(item.getName())) {
+            battleLog.logItemUse(user, item, target);
+            item.applyEffect(target);
+
+            // Log specific effect results
+            switch (item.getEffect()) {
+                case RESTORE_HP:
+                    battleLog.log(target.getName() + " recovered HP!");
+                    break;
+                case RESTORE_MP:
+                    battleLog.log(target.getName() + " recovered MP!");
+                    break;
+                case RESTORE_BOTH:
+                    battleLog.log(target.getName() + " recovered HP and MP!");
+                    break;
+                case BOOST_ATTACK:
+                    battleLog.log(target.getName() + "'s Attack increased!");
+                    break;
+                case BOOST_DEFENSE:
+                    battleLog.log(target.getName() + "'s Defense increased!");
+                    break;
+                case CURE_STATUS:
+                    battleLog.log(target.getName() + " was cured of negative status!");
+                    break;
+                case REVIVE:
+                    if (target.isAlive()) {
+                        battleLog.log(target.getName() + " was revived!");
+                    }
+                    break;
+            }
+        } else {
+            battleLog.log("Failed to use " + item.getName() + "!");
+        }
     }
 
     /**
      * Process status effects at end of turn
      */
     private void processEndOfTurn(Character character) {
-        if (!character.isAlive()) return;
+        if (!character.isAlive())
+            return;
 
         // Process active status effects
         for (StatusEffectType effectType : character.getActiveStatusEffects().keySet()) {
@@ -307,6 +356,11 @@ public class Battle {
                     character.takeDamage(burnDamage);
                     battleLog.logStatusDamage(character, StatusEffectType.BURN, burnDamage);
                     break;
+                case STUN:
+                case SHIELDED:
+                case SPEED_BUFF:
+                    // These are handled elsewhere
+                    break;
             }
 
             if (!character.isAlive()) {
@@ -316,6 +370,9 @@ public class Battle {
 
         // Decrement status effect durations
         character.processStatusEffects();
+
+        // Process item buffs (decrement duration)
+        character.processItemBuffs();
     }
 
     /**
@@ -342,6 +399,7 @@ public class Battle {
     /**
      * FR-BATTLE-005: Calculate and give rewards
      * Experience: 50 × Enemy Level per enemy
+     * Item Drops: Probability-based
      */
     private void giveRewards() {
         int totalExp = 0;
@@ -350,6 +408,8 @@ public class Battle {
         }
 
         battleLog.log("=== REWARDS ===");
+
+        // Give experience
         for (Character player : playerTeam) {
             if (player.isAlive()) {
                 int oldLevel = player.getLevel();
@@ -359,6 +419,47 @@ public class Battle {
                 if (player.getLevel() > oldLevel) {
                     battleLog.logLevelUp(player, player.getLevel());
                 }
+            }
+        }
+
+        // Item drops from enemies
+        battleLog.log("\n=== ITEM DROPS ===");
+        for (Character player : playerTeam) {
+            if (player.isAlive()) {
+                for (Character enemy : enemyTeam) {
+                    dropItems(player, enemy);
+                }
+                break; // Only give drops to first alive player
+            }
+        }
+    }
+
+    /**
+     * Drop items from defeated enemy with probability
+     */
+    private void dropItems(Character player, Character enemy) {
+        Inventory inventory = player.getInventory();
+        double dropChance = Math.random();
+
+        // High rate items (60% chance): Health Potion or Mana Potion
+        if (dropChance < 0.6) {
+            String item = Math.random() < 0.5 ? "Health Potion" : "Mana Potion";
+            if (inventory.addItem(item, 1)) {
+                battleLog.log(enemy.getName() + " dropped " + item + "!");
+            }
+        }
+        // Medium rate items (30% chance): Elixir, Attack Boost, Defense Boost, Antidote
+        else if (dropChance < 0.9) {
+            String[] mediumItems = { "Elixir", "Attack Boost", "Defense Boost", "Antidote" };
+            String item = mediumItems[(int) (Math.random() * mediumItems.length)];
+            if (inventory.addItem(item, 1)) {
+                battleLog.log(enemy.getName() + " dropped " + item + "!");
+            }
+        }
+        // Low rate items (10% chance): Revive
+        else {
+            if (inventory.addItem("Revive", 1)) {
+                battleLog.log(enemy.getName() + " dropped Revive! (RARE)");
             }
         }
     }
