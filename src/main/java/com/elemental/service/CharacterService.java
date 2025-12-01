@@ -143,4 +143,19 @@ public class CharacterService {
     public int getCharacterIndex(Character character) {
         return characterRoster.indexOf(character);
     }
+
+    /**
+     * FR-SAVE-002: Clear all characters (for loading saved game)
+     */
+    public void clearAllCharacters() {
+        characterRoster.clear();
+        selectedCharacter = null;
+    }
+
+    /**
+     * FR-SAVE-002: Add character to roster (for loading saved game)
+     */
+    public void addCharacter(Character character) {
+        characterRoster.add(character);
+    }
 }
