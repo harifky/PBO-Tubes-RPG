@@ -12,25 +12,27 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
 import java.util.Map;
 
 public class BattleScene {
-    // Layout Utama
-    private StackPane rootStack; // Root untuk menumpuk overlay menu di atas game
+    // Layout Components
+    private StackPane rootStack;
     private BorderPane layout;
-    private Pane overlayPane; // Untuk efek floating text
+    private Pane overlayPane;
     private TextArea battleLog;
 
-    // Area Sprite & Arena
+    // Sprite Containers
     private HBox arenaContainer;
     private VBox enemySpriteBox;
     private VBox playerSpriteBox;
 
-    // HUD (Heads-Up Display)
-    private VBox topHud;
+    // HUD Components
+    private BorderPane topBar;
+    private VBox topHudCenter;
     private Label enemyNameLbl;
     private ProgressBar enemyHP;
 
@@ -39,54 +41,75 @@ public class BattleScene {
     private ProgressBar playerHP, playerMP;
     private HBox actionMenu;
 
+    // State
+    private boolean isPaused = false;
+
     public BattleScene() {
-        // 1. Setup Root & Layer
+        // 1. Root Stack (Untuk menumpuk Game + Overlay Menu + Popup)
         rootStack = new StackPane();
         rootStack.getStyleClass().add("root");
 
         layout = new BorderPane();
 
+        // Layer untuk efek floating text (damage numbers)
         overlayPane = new Pane();
-        overlayPane.setPickOnBounds(false); // Agar klik tembus ke layer bawah
+        overlayPane.setPickOnBounds(false);
 
         // =========================================
-        // 2. TOP SECTION (ENEMY HUD)
+        // 2. TOP SECTION (ENEMY HUD + PAUSE BTN)
         // =========================================
-        topHud = new VBox(5);
-        topHud.setPadding(new Insets(10, 20, 10, 20));
-        topHud.setAlignment(Pos.CENTER);
-        topHud.getStyleClass().add("panel-background");
-        BorderPane.setMargin(topHud, new Insets(10, 10, 0, 10));
+        topBar = new BorderPane();
+        topBar.setPadding(new Insets(15));
+        BorderPane.setMargin(topBar, new Insets(10));
+
+        // -- Enemy HUD (Tengah) --
+        topHudCenter = new VBox(5);
+        topHudCenter.setAlignment(Pos.CENTER);
+        topHudCenter.getStyleClass().add("panel-background");
+        topHudCenter.setPadding(new Insets(10, 40, 10, 40));
+        topHudCenter.setMaxWidth(500);
+        topHudCenter.setEffect(new DropShadow(10, Color.BLACK)); // Efek bayangan
 
         enemyNameLbl = new Label("Enemy Name");
-        enemyNameLbl.setStyle("-fx-font-family: 'Times New Roman'; -fx-font-size: 18px; -fx-font-weight: bold;");
+        enemyNameLbl.setStyle("-fx-font-family: 'Times New Roman'; -fx-font-size: 20px; -fx-font-weight: bold;");
 
         enemyHP = new ProgressBar(1.0);
         enemyHP.getStyleClass().add("hp-bar");
         enemyHP.setPrefWidth(400);
         enemyHP.setStyle("-fx-accent: #ff3333;");
 
-        topHud.getChildren().addAll(enemyNameLbl, enemyHP);
-        layout.setTop(topHud);
+        topHudCenter.getChildren().addAll(enemyNameLbl, enemyHP);
+
+        // -- Tombol Pause (Kanan) --
+        Button btnPause = new Button("||");
+        btnPause.getStyleClass().add("button-medieval");
+        btnPause.setPrefSize(45, 45);
+        btnPause.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 10;");
+        btnPause.setOnAction(e -> showPauseMenu());
+
+        topBar.setCenter(topHudCenter);
+        topBar.setRight(btnPause);
+
+        layout.setTop(topBar);
 
         // =========================================
-        // 3. CENTER SECTION (BATTLE ARENA) - UPDATE BACKGROUND
+        // 3. CENTER SECTION (ARENA PERTARUNGAN)
         // =========================================
         arenaContainer = new HBox();
         arenaContainer.setAlignment(Pos.CENTER);
-        arenaContainer.setSpacing(100);
+        arenaContainer.setSpacing(150); // Jarak antar karakter
 
-        // CSS Baru: Background Image + Border Kayu
+        // Styling Arena (Background + Border Kayu)
         arenaContainer.setStyle(
+                "-fx-background-image: url('/assets/battle_bg.jpg');" +
                         "-fx-background-size: cover;" +
                         "-fx-background-position: center center;" +
-                        "-fx-border-color: #5c4033;" +
-                        "-fx-border-width: 6px;" +
-                        "-fx-border-radius: 5px;" +
-                        "-fx-effect: innerShadow(gaussian, rgba(0,0,0,0.8), 15, 0.2, 0, 0);"
+                        "-fx-border-color: #3e2723;" +
+                        "-fx-border-width: 8px;" +
+                        "-fx-border-radius: 0;" +
+                        "-fx-effect: innerShadow(gaussian, rgba(0,0,0,0.9), 40, 0.4, 0, 0);"
         );
 
-        // Container Sprite
         enemySpriteBox = new VBox();
         enemySpriteBox.setAlignment(Pos.CENTER);
         enemySpriteBox.setId("enemyBox");
@@ -95,11 +118,7 @@ public class BattleScene {
         playerSpriteBox.setAlignment(Pos.CENTER);
         playerSpriteBox.setId("playerBox");
 
-        // Label VS (Transparan)
-        Label vsLabel = new Label("VS");
-        vsLabel.setStyle("-fx-font-size: 60px; -fx-text-fill: rgba(255,255,255,0.1); -fx-font-weight: bold;");
-
-        arenaContainer.getChildren().addAll(enemySpriteBox, vsLabel, playerSpriteBox);
+        arenaContainer.getChildren().addAll(enemySpriteBox, playerSpriteBox);
         layout.setCenter(arenaContainer);
 
         // =========================================
@@ -111,11 +130,11 @@ public class BattleScene {
         BorderPane.setMargin(logContainer, new Insets(10, 10, 10, 0));
 
         Label logTitle = new Label("Battle Log");
-        logTitle.setStyle("-fx-font-weight: bold;");
+        logTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
         battleLog = new TextArea();
         battleLog.setEditable(false);
-        battleLog.setPrefWidth(200);
+        battleLog.setPrefWidth(220);
         battleLog.setPrefHeight(400);
         battleLog.setWrapText(true);
         battleLog.setStyle("-fx-control-inner-background: #f4e4bc; -fx-font-family: 'Courier New'; -fx-font-size: 12px;");
@@ -127,32 +146,34 @@ public class BattleScene {
         // 5. BOTTOM SECTION (PLAYER HUD)
         // =========================================
         bottomHud = new VBox(10);
-        bottomHud.setPadding(new Insets(15));
+        bottomHud.setPadding(new Insets(20));
         bottomHud.getStyleClass().add("panel-background");
+        bottomHud.setEffect(new DropShadow(10, Color.BLACK));
         BorderPane.setMargin(bottomHud, new Insets(0, 10, 10, 10));
 
         playerNameLbl = new Label("Player Name");
-        playerNameLbl.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+        playerNameLbl.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
 
-        VBox barsBox = new VBox(5);
+        VBox barsBox = new VBox(8);
         playerHP = new ProgressBar(1.0);
         playerHP.getStyleClass().add("hp-bar");
-        playerHP.setPrefWidth(300);
+        playerHP.setPrefWidth(350);
 
         playerMP = new ProgressBar(1.0);
         playerMP.getStyleClass().add("mp-bar");
-        playerMP.setPrefWidth(300);
+        playerMP.setPrefWidth(350);
 
         barsBox.getChildren().addAll(new Label("HP"), playerHP, new Label("MP"), playerMP);
 
         // Action Buttons
-        actionMenu = new HBox(15);
-        actionMenu.setAlignment(Pos.CENTER);
+        actionMenu = new HBox(20);
+        actionMenu.setAlignment(Pos.CENTER_RIGHT);
 
-        double btnW = 100;
-        double btnH = 40;
+        double btnW = 110;
+        double btnH = 45;
 
         Button btnAttack = createActionButton("ATTACK", btnW, btnH);
+        btnAttack.setStyle("-fx-base: #8b0000;"); // Merah tua
         btnAttack.setOnAction(e -> executePlayerAction(ActionType.ATTACK, null, null));
 
         Button btnSkill = createActionButton("SKILL", btnW, btnH);
@@ -162,11 +183,12 @@ public class BattleScene {
         btnItem.setOnAction(e -> showItemSelection());
 
         Button btnDefend = createActionButton("DEFEND", btnW, btnH);
+        btnDefend.setStyle("-fx-base: #2f4f4f;"); // Abu-abu biru
         btnDefend.setOnAction(e -> executePlayerAction(ActionType.DEFEND, null, null));
 
         actionMenu.getChildren().addAll(btnAttack, btnSkill, btnItem, btnDefend);
 
-        HBox bottomLayout = new HBox(20);
+        HBox bottomLayout = new HBox(30);
         bottomLayout.setAlignment(Pos.CENTER_LEFT);
 
         VBox infoContainer = new VBox(5);
@@ -180,13 +202,13 @@ public class BattleScene {
 
         layout.setBottom(bottomHud);
 
-        // Gabungkan Layer
+        // Gabungkan Layer: Layout Utama -> Overlay Efek (Damage)
         rootStack.getChildren().addAll(layout, overlayPane);
 
         initialUpdate();
     }
 
-    // Helper bikin tombol
+    // Helper untuk membuat tombol seragam
     private Button createActionButton(String text, double w, double h) {
         Button btn = new Button(text);
         btn.getStyleClass().add("button-medieval");
@@ -194,12 +216,122 @@ public class BattleScene {
         return btn;
     }
 
+    // Penting: Mengembalikan rootStack (agar overlay bisa menumpuk di atasnya)
     public StackPane getLayout() { return rootStack; }
 
     // =========================================
-    // UI LOGIC: MENU OVERLAYS
+    // UI LOGIC: MENU & POPUPS
     // =========================================
 
+    // Menu Pause Utama
+    private void showPauseMenu() {
+        isPaused = true;
+
+        VBox pauseContent = new VBox(15);
+        pauseContent.setAlignment(Pos.CENTER);
+
+        Button btnResume = createActionButton("RESUME", 220, 50);
+        btnResume.setOnAction(e -> closeOverlay());
+
+        Button btnSettings = createActionButton("SETTINGS", 220, 50);
+        btnSettings.setOnAction(e -> showInGameSettingsMenu());
+
+        Button btnExit = createActionButton("EXIT TO MENU", 220, 50);
+        btnExit.setStyle("-fx-background-color: #8b0000; -fx-text-fill: white; -fx-border-color: #ffd700; -fx-border-width: 2;");
+        btnExit.setOnAction(e -> {
+            // MENGGUNAKAN MEDIEVAL POPUP UNTUK KONFIRMASI
+            MedievalPopup.showConfirm(rootStack, "LEAVE BATTLE?",
+                    "Are you sure you want to surrender?\nAll unsaved progress will be lost.",
+                    () -> MainFX.primaryStage.setScene(new MainMenuScene().getScene())
+            );
+        });
+
+        pauseContent.getChildren().addAll(btnResume, btnSettings, btnExit);
+
+        showFancyOverlay("GAME PAUSED", pauseContent);
+    }
+
+    // Menu Settings dalam Game
+    private void showInGameSettingsMenu() {
+        VBox settingsBox = new VBox(20);
+        settingsBox.setAlignment(Pos.CENTER);
+
+        CheckBox cbLog = new CheckBox("Detailed Battle Log");
+        cbLog.setStyle("-fx-font-size: 16px; -fx-text-fill: #3e1903; -fx-font-weight: bold;");
+        cbLog.setSelected(GameSettings.getInstance().isShowDetailedLog());
+        cbLog.setOnAction(e -> GameSettings.getInstance().setShowDetailedLog(cbLog.isSelected()));
+
+        CheckBox cbAuto = new CheckBox("Auto Progress");
+        cbAuto.setStyle("-fx-font-size: 16px; -fx-text-fill: #3e1903; -fx-font-weight: bold;");
+        cbAuto.setSelected(GameSettings.getInstance().isAutoProgress());
+        cbAuto.setOnAction(e -> GameSettings.getInstance().setAutoProgress(cbAuto.isSelected()));
+
+        settingsBox.getChildren().addAll(cbLog, cbAuto);
+
+        showFancyOverlay("SETTINGS", settingsBox);
+    }
+
+    // Overlay Premium (Background Gelap + Panel Elegan)
+    private void showFancyOverlay(String title, Node content) {
+        StackPane overlayBg = new StackPane();
+        overlayBg.setStyle("-fx-background-color: rgba(0, 0, 0, 0.85);");
+
+        VBox menuBox = new VBox(20);
+        menuBox.setAlignment(Pos.CENTER);
+        menuBox.setMaxSize(400, 400);
+        menuBox.setPadding(new Insets(30));
+
+        // Styling Inline
+        menuBox.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #2b1b17, #1a1a1a);" +
+                        "-fx-border-color: #ffd700;" +
+                        "-fx-border-width: 4;" +
+                        "-fx-border-radius: 15;" +
+                        "-fx-background-radius: 15;" +
+                        "-fx-effect: dropshadow(gaussian, black, 20, 0.5, 0, 0);"
+        );
+
+        Label lblTitle = new Label(title);
+        lblTitle.setStyle(
+                "-fx-font-family: 'Times New Roman';" +
+                        "-fx-font-size: 32px;" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-text-fill: #ffd700;" +
+                        "-fx-effect: dropshadow(one-pass-box, black, 2, 2, 0, 0);"
+        );
+
+        Button btnBack = new Button("Back");
+        btnBack.getStyleClass().add("button-medieval");
+        btnBack.setOnAction(e -> closeOverlay());
+
+        if (!title.equals("GAME PAUSED")) {
+            menuBox.getChildren().addAll(lblTitle, new Separator(), content, new Separator(), btnBack);
+        } else {
+            menuBox.getChildren().addAll(lblTitle, new Separator(), content);
+        }
+
+        overlayBg.getChildren().add(menuBox);
+        rootStack.getChildren().add(overlayBg);
+
+        // Animasi Pop-up
+        ScaleTransition st = new ScaleTransition(Duration.millis(200), menuBox);
+        st.setFromX(0.5); st.setFromY(0.5);
+        st.setToX(1.0); st.setToY(1.0);
+        st.play();
+    }
+
+    private void closeOverlay() {
+        // Menutup layer paling atas (overlay terakhir)
+        if (rootStack.getChildren().size() > 2) {
+            rootStack.getChildren().remove(rootStack.getChildren().size() - 1);
+        }
+        // Jika tidak ada overlay lagi, unpause game
+        if (rootStack.getChildren().size() <= 2) {
+            isPaused = false;
+        }
+    }
+
+    // --- Overlay Sederhana untuk Skill/Item ---
     private void showOverlayMenu(String title, Node content) {
         StackPane overlayBg = new StackPane();
         overlayBg.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7);");
@@ -208,22 +340,23 @@ public class BattleScene {
         menuBox.getStyleClass().add("panel-background");
         menuBox.setPadding(new Insets(20));
         menuBox.setAlignment(Pos.CENTER);
-        menuBox.setMaxSize(400, 300);
+        menuBox.setMaxSize(400, 350);
 
         Label lblTitle = new Label(title);
         lblTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-underline: true;");
 
-        Button btnCancel = new Button("Cancel");
-        btnCancel.getStyleClass().add("button-medieval");
-        btnCancel.setOnAction(e -> rootStack.getChildren().remove(overlayBg));
+        Button btnBack = new Button("Back");
+        btnBack.getStyleClass().add("button-medieval");
+        btnBack.setOnAction(e -> closeOverlay());
 
-        menuBox.getChildren().addAll(lblTitle, content, new Separator(), btnCancel);
+        menuBox.getChildren().addAll(lblTitle, content, new Separator(), btnBack);
         overlayBg.getChildren().add(menuBox);
-
         rootStack.getChildren().add(overlayBg);
     }
 
     private void showSkillSelection() {
+        if (isPaused) return;
+
         Character player = MainFX.battleService.getCurrentBattle().getPlayerTeam().get(0);
         VBox skillList = new VBox(10);
         skillList.setAlignment(Pos.CENTER);
@@ -238,7 +371,7 @@ public class BattleScene {
                 btn.setStyle("-fx-opacity: 0.6; -fx-text-fill: #555;");
             } else {
                 btn.setOnAction(e -> {
-                    rootStack.getChildren().remove(rootStack.getChildren().size() - 1);
+                    closeOverlay();
                     executePlayerAction(ActionType.SKILL, skill, null);
                 });
             }
@@ -248,6 +381,8 @@ public class BattleScene {
     }
 
     private void showItemSelection() {
+        if (isPaused) return;
+
         Character player = MainFX.battleService.getCurrentBattle().getPlayerTeam().get(0);
         Inventory inv = player.getInventory();
         VBox itemList = new VBox(10);
@@ -271,7 +406,7 @@ public class BattleScene {
                 btn.setTooltip(tooltip);
 
                 btn.setOnAction(e -> {
-                    rootStack.getChildren().remove(rootStack.getChildren().size() - 1);
+                    closeOverlay();
                     executePlayerAction(ActionType.ITEM, null, itemTemplate);
                 });
                 itemList.getChildren().add(btn);
@@ -339,7 +474,6 @@ public class BattleScene {
                     enemySpriteBox.localToScene(enemySpriteBox.getBoundsInLocal()).getMinX() + 50 :
                     playerSpriteBox.localToScene(playerSpriteBox.getBoundsInLocal()).getMinX() + 50;
 
-            // Adjust posisi Y floating text agar pas di atas karakter
             double yPos = layout.getCenter().getBoundsInParent().getMinY() + 100;
 
             String text = (isCritical ? "CRIT " : "") + damageDealt;
@@ -358,6 +492,8 @@ public class BattleScene {
     }
 
     private void executePlayerAction(ActionType type, Skill skill, Item item) {
+        if (isPaused) return;
+
         Battle battle = MainFX.battleService.getCurrentBattle();
         Character player = battle.getPlayerTeam().get(0);
         Character enemy = battle.getEnemyTeam().get(0);
@@ -368,7 +504,7 @@ public class BattleScene {
 
         if (type == ActionType.ITEM && item != null) {
             action.setItem(item);
-            action.setTarget(player); // Item ke diri sendiri
+            action.setTarget(player);
         } else {
             action.setTarget(enemy);
         }
@@ -387,15 +523,14 @@ public class BattleScene {
 
         if (battle.getBattleStatus() != BattleStatus.ONGOING) return;
 
-        // ENEMY TURN (Delay)
         actionMenu.setDisable(true);
         PauseTransition pause = new PauseTransition(Duration.seconds(1.2));
         pause.setOnFinished(e -> {
             if (battle.getBattleStatus() != BattleStatus.ONGOING) return;
             int pHpBefore = player.getCurrentHP();
 
-            BattleAction enemyAction = new BattleAction(enemy, ActionType.ATTACK);
-            enemyAction.setTarget(player);
+            com.elemental.strategy.AIStrategy ai = com.elemental.strategy.AIStrategyFactory.create(GameSettings.getInstance().getAIDifficulty());
+            BattleAction enemyAction = ai.decideAction(enemy, battle.getEnemyTeam(), battle.getPlayerTeam());
             battle.executeAction(enemyAction);
 
             int pDamage = Math.max(0, pHpBefore - player.getCurrentHP());
@@ -407,12 +542,28 @@ public class BattleScene {
         pause.play();
     }
 
+    // MENGGUNAKAN MEDIEVAL POPUP UNTUK HASIL BATTLE
     private void handleBattleEnd(BattleStatus status) {
-        actionMenu.setDisable(true);
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Battle Result");
-        alert.setHeaderText(status == BattleStatus.VICTORY ? "VICTORY!" : "DEFEAT...");
-        alert.show();
-        alert.setOnHidden(e -> MainFX.primaryStage.setScene(new MainMenuScene().getScene()));
+        actionMenu.setDisable(true); // Kunci tombol
+
+        String title;
+        String msg;
+        MedievalPopup.Type type;
+
+        if (status == BattleStatus.VICTORY) {
+            title = "VICTORY!";
+            msg = "Enemy defeated!\nYou gained experience and loot.";
+            type = MedievalPopup.Type.VICTORY;
+        } else {
+            title = "DEFEAT...";
+            msg = "You have fallen in battle...\nBetter luck next time.";
+            type = MedievalPopup.Type.DEFEAT;
+        }
+
+        // Tampilkan Popup
+        MedievalPopup.show(rootStack, title, msg, type, () -> {
+            // Kembali ke Menu Utama setelah user klik OK
+            MainFX.primaryStage.setScene(new MainMenuScene().getScene());
+        });
     }
 }

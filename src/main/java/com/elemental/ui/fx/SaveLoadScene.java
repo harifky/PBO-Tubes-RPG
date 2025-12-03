@@ -5,31 +5,34 @@ import com.elemental.model.SaveData;
 import com.elemental.model.SaveMetadata;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class SaveLoadScene {
+    // GANTI: Root utama jadi StackPane untuk support Popup
+    private StackPane rootStack;
     private BorderPane layout;
     private VBox slotsContainer;
-    private boolean isSaveMode; // true = Menu Save, false = Menu Load
+    private boolean isSaveMode;
 
     public SaveLoadScene(boolean isSaveMode) {
         this.isSaveMode = isSaveMode;
 
+        // Inisialisasi Root Stack
+        rootStack = new StackPane();
+        rootStack.getStyleClass().add("root");
+
         layout = new BorderPane();
-        layout.getStyleClass().add("root");
         layout.setPadding(new Insets(20));
 
-        // --- HEADER ---
         Label title = new Label(isSaveMode ? "SAVE GAME" : "LOAD GAME");
         title.getStyleClass().add("game-title");
 
@@ -37,14 +40,12 @@ public class SaveLoadScene {
         topBox.setAlignment(Pos.CENTER);
         layout.setTop(topBox);
 
-        // --- SLOTS AREA ---
         slotsContainer = new VBox(15);
         slotsContainer.setAlignment(Pos.CENTER);
-        refreshSlots(); // Load data slot dari file
+        refreshSlots();
 
         layout.setCenter(slotsContainer);
 
-        // --- FOOTER (BACK BUTTON) ---
         Button btnBack = new Button("Back");
         btnBack.getStyleClass().add("button-medieval");
         btnBack.setPrefWidth(150);
@@ -54,14 +55,15 @@ public class SaveLoadScene {
         bottomBox.setAlignment(Pos.CENTER);
         bottomBox.setPadding(new Insets(20));
         layout.setBottom(bottomBox);
+
+        // Masukkan layout ke rootStack
+        rootStack.getChildren().add(layout);
     }
 
     private void refreshSlots() {
         slotsContainer.getChildren().clear();
-        // Ambil data metadata dari service
         List<SaveMetadata> allMeta = MainFX.saveLoadService.getAllSaveMetadata();
 
-        // Loop membuat 3 Slot Card
         for (int i = 0; i < 3; i++) {
             int slotNum = i + 1;
             SaveMetadata meta = (i < allMeta.size()) ? allMeta.get(i) : null;
@@ -76,13 +78,11 @@ public class SaveLoadScene {
         card.setAlignment(Pos.CENTER_LEFT);
         card.setMaxWidth(600);
 
-        // --- INFO SLOT (Kiri) ---
         VBox infoBox = new VBox(5);
         Label lblSlotName = new Label("Slot " + slotNum);
         lblSlotName.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
 
         Label lblDetail = new Label();
-        // Cek apakah slot kosong atau corrupt
         boolean isEmpty = meta == null || meta.getSavedAt() == null || meta.getSlotName().contains("Empty");
 
         if (isEmpty) {
@@ -98,11 +98,8 @@ public class SaveLoadScene {
             ));
         }
         infoBox.getChildren().addAll(lblSlotName, lblDetail);
-
-        // Spacer agar tombol terdorong ke kanan
         HBox.setHgrow(infoBox, Priority.ALWAYS);
 
-        // --- TOMBOL AKSI (Kanan) ---
         HBox btnBox = new HBox(10);
         btnBox.setAlignment(Pos.CENTER_RIGHT);
 
@@ -112,15 +109,13 @@ public class SaveLoadScene {
             btnSave.setOnAction(e -> handleSave(slotNum));
             btnBox.getChildren().add(btnSave);
         } else {
-            // Load Mode
             Button btnLoad = new Button("LOAD");
             btnLoad.getStyleClass().add("button-medieval");
-            btnLoad.setDisable(isEmpty); // Matikan tombol jika slot kosong
+            btnLoad.setDisable(isEmpty);
             btnLoad.setOnAction(e -> handleLoad(slotNum));
             btnBox.getChildren().add(btnLoad);
         }
 
-        // Tombol Delete (Hanya jika ada isi)
         if (!isEmpty) {
             Button btnDelete = new Button("X");
             btnDelete.setStyle("-fx-background-color: #a00; -fx-text-fill: white; -fx-font-weight: bold;");
@@ -132,51 +127,61 @@ public class SaveLoadScene {
         return card;
     }
 
-    // --- LOGIKA TOMBOL ---
+    // --- GANTI ALERT DENGAN MEDIEVAL POPUP ---
 
     private void handleSave(int slotNum) {
-        try {
-            // Konfirmasi jika menimpa file
-            if (MainFX.saveLoadService.saveSlotExists(slotNum)) {
-                Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Overwrite Slot " + slotNum + "?");
-                if (confirm.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) return;
-            }
+        if (MainFX.saveLoadService.saveSlotExists(slotNum)) {
+            // Konfirmasi Overwrite
+            MedievalPopup.showConfirm(rootStack, "OVERWRITE SAVE?",
+                    "Slot " + slotNum + " already has data.\nOverwrite it?",
+                    () -> performSave(slotNum));
+        } else {
+            performSave(slotNum);
+        }
+    }
 
+    private void performSave(int slotNum) {
+        try {
             MainFX.saveLoadService.saveGame(slotNum);
             refreshSlots();
-            new Alert(Alert.AlertType.INFORMATION, "Game Saved Successfully!").show();
+            MedievalPopup.show(rootStack, "GAME SAVED",
+                    "Your progress has been saved to Slot " + slotNum + ".",
+                    MedievalPopup.Type.SUCCESS);
         } catch (Exception e) {
-            new Alert(Alert.AlertType.ERROR, "Save Failed: " + e.getMessage()).show();
+            MedievalPopup.show(rootStack, "SAVE FAILED", e.getMessage(), MedievalPopup.Type.ERROR);
         }
     }
 
     private void handleLoad(int slotNum) {
         try {
             SaveData data = MainFX.saveLoadService.loadGame(slotNum);
-            MainFX.saveLoadService.applySaveData(data); // Terapkan data ke game
+            MainFX.saveLoadService.applySaveData(data);
 
-            Alert alert = new Alert(Alert.AlertType.INFORMATION, "Game Loaded!");
-            alert.showAndWait();
-
-            // Kembali ke menu utama (state karakter sudah berubah sesuai save file)
-            MainFX.primaryStage.setScene(new MainMenuScene().getScene());
+            MedievalPopup.show(rootStack, "GAME LOADED",
+                    "Welcome back, Hero!\nGame loaded successfully.",
+                    MedievalPopup.Type.SUCCESS,
+                    () -> MainFX.primaryStage.setScene(new MainMenuScene().getScene()) // Balik ke menu setelah OK
+            );
 
         } catch (Exception e) {
-            new Alert(Alert.AlertType.ERROR, "Load Failed: " + e.getMessage()).show();
+            MedievalPopup.show(rootStack, "LOAD FAILED", e.getMessage(), MedievalPopup.Type.ERROR);
         }
     }
 
     private void handleDelete(int slotNum) {
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Delete Slot " + slotNum + "? Cannot be undone.");
-        if (confirm.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
-            try {
-                MainFX.saveLoadService.deleteSave(slotNum);
-                refreshSlots();
-            } catch (Exception e) {
-                new Alert(Alert.AlertType.ERROR, "Delete Failed: " + e.getMessage()).show();
-            }
-        }
+        MedievalPopup.showConfirm(rootStack, "DELETE SAVE?",
+                "Are you sure you want to delete Slot " + slotNum + "?\nThis action cannot be undone.",
+                () -> {
+                    try {
+                        MainFX.saveLoadService.deleteSave(slotNum);
+                        refreshSlots();
+                        MedievalPopup.show(rootStack, "DELETED", "Save file deleted.", MedievalPopup.Type.INFO);
+                    } catch (Exception e) {
+                        MedievalPopup.show(rootStack, "ERROR", e.getMessage(), MedievalPopup.Type.ERROR);
+                    }
+                });
     }
 
-    public BorderPane getLayout() { return layout; }
+    // Penting: Return rootStack (bukan layout) karena popup ada di stack
+    public StackPane getLayout() { return rootStack; }
 }
