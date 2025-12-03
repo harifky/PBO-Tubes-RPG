@@ -18,41 +18,47 @@ public class MainMenuScene {
         Label title = new Label("ELEMENTAL BATTLE ARENA");
         title.getStyleClass().add("game-title");
 
-        // Tombol-tombol Menu
+        // 1. Character Management
         Button btnCharMgmt = createMenuButton("Character Management");
         btnCharMgmt.setOnAction(e -> {
             MainFX.primaryStage.getScene().setRoot(new CharacterScene().getLayout());
         });
 
+        // 2. Start Battle
         Button btnBattle = createMenuButton("Start Battle");
         btnBattle.setOnAction(e -> {
             MainFX.primaryStage.getScene().setRoot(new BattleSetupScene().getLayout());
         });
 
-        // BARU: Tombol Save
+        // 3. Inventory (BARU)
+        Button btnInventory = createMenuButton("Inventory");
+        btnInventory.setOnAction(e -> {
+            MainFX.primaryStage.getScene().setRoot(new InventoryScene().getLayout());
+        });
+
+        // 4. Save Game
         Button btnSave = createMenuButton("Save Game");
         btnSave.setOnAction(e -> {
-            // Buka SaveLoadScene dengan mode Save (true)
             MainFX.primaryStage.getScene().setRoot(new SaveLoadScene(true).getLayout());
         });
 
-        // BARU: Tombol Load
+        // 5. Load Game
         Button btnLoad = createMenuButton("Load Game");
         btnLoad.setOnAction(e -> {
-            // Buka SaveLoadScene dengan mode Load (false)
             MainFX.primaryStage.getScene().setRoot(new SaveLoadScene(false).getLayout());
         });
 
-        // BARU: Tombol Settings
+        // 6. Settings
         Button btnSettings = createMenuButton("Settings");
         btnSettings.setOnAction(e -> {
             MainFX.primaryStage.getScene().setRoot(new SettingsScene().getLayout());
         });
 
+        // 0. Exit
         Button btnExit = createMenuButton("Exit Game");
         btnExit.setOnAction(e -> MainFX.primaryStage.close());
 
-        layout.getChildren().addAll(title, btnCharMgmt, btnBattle, btnSave, btnLoad, btnSettings, btnExit);
+        layout.getChildren().addAll(title, btnCharMgmt, btnBattle, btnInventory, btnSave, btnLoad, btnSettings, btnExit);
 
         this.scene = new Scene(layout, 800, 600);
         this.scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());

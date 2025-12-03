@@ -4,6 +4,7 @@ import com.elemental.model.Character;
 import com.elemental.model.CharacterClass;
 import com.elemental.model.Element;
 import com.elemental.model.GameSettings;
+import com.elemental.model.Inventory; // Import Inventory
 import com.elemental.service.CharacterService;
 import com.elemental.service.SaveLoadService;
 import com.elemental.factory.CharacterFactory;
@@ -330,8 +331,8 @@ public class CharacterManagement {
         for (int i = 0; i < deadCharacters.size(); i++) {
             Character c = deadCharacters.get(i);
             System.out.println((i + 1) + ". " + c.getName() +
-                " (Lv." + c.getLevel() + " " + c.getCharacterClass() +
-                " " + c.getElement() + ") [DEAD]");
+                    " (Lv." + c.getLevel() + " " + c.getCharacterClass() +
+                    " " + c.getElement() + ") [DEAD]");
         }
 
         System.out.print("\nEnter character number to revive (0 to cancel): ");
@@ -350,11 +351,10 @@ public class CharacterManagement {
 
             Character toRevive = deadCharacters.get(choice - 1);
 
-            // Check if character has Revive item in inventory
-            if (!toRevive.getInventory().hasItem("Revive")) {
-                System.out.println("\n❌ " + toRevive.getName() + " doesn't have a Revive item!");
-                System.out.println("💡 Tip: You need a 'Revive' item in the character's inventory.");
-                System.out.println("    Revive items can be obtained during battles.");
+            // GANTI: Cek inventory GLOBAL (Singleton), bukan inventory karakter
+            if (!Inventory.getInstance().hasItem("Revive")) {
+                System.out.println("\n❌ You don't have a Revive item in global inventory!");
+                System.out.println("💡 Tip: Revive items can be obtained during battles.");
                 return;
             }
 
@@ -368,8 +368,8 @@ public class CharacterManagement {
                 toRevive.setCurrentHP(reviveHP);
                 toRevive.setStatus(com.elemental.model.Status.NORMAL);
 
-                // Remove item from inventory
-                toRevive.getInventory().removeItem("Revive", 1);
+                // GANTI: Remove item from GLOBAL inventory
+                Inventory.getInstance().removeItem("Revive", 1);
 
                 System.out.println("\n════════════════════════════════════════");
                 System.out.println("✨ REVIVAL SUCCESSFUL! ✨");
@@ -378,6 +378,12 @@ public class CharacterManagement {
                 System.out.println("HP Restored: " + reviveHP + "/" + toRevive.getMaxHP() + " (30%)");
                 System.out.println("Status: " + toRevive.getStatus());
                 System.out.println("\n" + toRevive.getStatsPreview());
+
+                // Auto-save
+                if (saveLoadService != null && GameSettings.getInstance().isAutoSave()) {
+                    saveLoadService.autoSave();
+                    System.out.println("💾 Game auto-saved!");
+                }
             } else {
                 System.out.println("Revive cancelled.");
             }

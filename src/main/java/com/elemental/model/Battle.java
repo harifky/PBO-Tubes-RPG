@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.Random;
 
 /**
  * FR-BATTLE-001: Battle Initialization
@@ -18,11 +19,13 @@ public class Battle {
     private PriorityQueue<Character> turnOrder;
     private int turnNumber;
     private Character currentTurn;
+    private Random random;
 
     public Battle() {
         this.battleLog = new BattleLog();
         this.battleStatus = BattleStatus.ONGOING;
         this.turnNumber = 0;
+        this.random = new Random();
     }
 
     /**
@@ -54,7 +57,8 @@ public class Battle {
      */
     private void calculateTurnOrder() {
         turnOrder = new PriorityQueue<>(
-                Comparator.comparingInt(Character::getModifiedSpeed).reversed());
+                Comparator.comparingInt(Character::getModifiedSpeed).reversed()
+        );
 
         // Add all alive characters
         for (Character c : playerTeam) {
@@ -152,7 +156,8 @@ public class Battle {
         battleLog.logDamage(attacker, defender, damage, isCritical);
 
         String elementAdvantage = DamageCalculator.getElementAdvantage(
-                attacker.getElement(), defender.getElement());
+                attacker.getElement(), defender.getElement()
+        );
         if (!elementAdvantage.isEmpty()) {
             battleLog.logElementAdvantage(elementAdvantage);
         }
@@ -188,10 +193,11 @@ public class Battle {
                 target.takeDamage(damage);
                 battleLog.logDamage(user, target, damage, isCritical);
 
-                // Use skill element if available, otherwise use user element
+                // Element Advantage for Skills
                 Element attackElement = skill.getElement() != null ? skill.getElement() : user.getElement();
                 String elementAdvantage = DamageCalculator.getElementAdvantage(
-                        attackElement, target.getElement());
+                        attackElement, target.getElement()
+                );
                 if (!elementAdvantage.isEmpty()) {
                     battleLog.logElementAdvantage(elementAdvantage);
                 }
@@ -276,7 +282,7 @@ public class Battle {
 
     /**
      * Execute item usage
-     * FR-ITEM-003: Item usage rules
+     * UPDATE: Menggunakan Global Inventory
      */
     private void executeItem(Character user, Character target, Item item) {
         if (item == null) {
@@ -284,13 +290,16 @@ public class Battle {
             return;
         }
 
-        // Check if user has item in inventory
-        if (!user.getInventory().hasItem(item.getName())) {
+        // Gunakan Singleton Inventory
+        Inventory globalInv = Inventory.getInstance();
+
+        // Cek stok di inventory global
+        if (!globalInv.hasItem(item.getName())) {
             battleLog.log(item.getName() + " not available!");
             return;
         }
 
-        // Check if target is valid for this item
+        // Cek validitas target
         if (!item.canUse(target)) {
             String reason = target.isAlive() ? "invalid target" : "cannot use on dead ally";
             if (item.getTargetType() == ItemTarget.DEAD_ALLY && target.isAlive()) {
@@ -300,12 +309,12 @@ public class Battle {
             return;
         }
 
-        // Use item from inventory (FR-ITEM-003: quantity decreases)
-        if (user.getInventory().useItem(item.getName())) {
+        // Gunakan item (kurangi stok global)
+        if (globalInv.useItem(item.getName())) {
             battleLog.logItemUse(user, item, target);
             item.applyEffect(target);
 
-            // Log specific effect results
+            // Log spesifik efek item
             switch (item.getEffect()) {
                 case RESTORE_HP:
                     battleLog.log(target.getName() + " recovered HP!");
@@ -340,8 +349,7 @@ public class Battle {
      * Process status effects at end of turn
      */
     private void processEndOfTurn(Character character) {
-        if (!character.isAlive())
-            return;
+        if (!character.isAlive()) return;
 
         // Process active status effects
         for (StatusEffectType effectType : character.getActiveStatusEffects().keySet()) {
@@ -358,11 +366,6 @@ public class Battle {
                     character.takeDamage(burnDamage);
                     battleLog.logStatusDamage(character, StatusEffectType.BURN, burnDamage);
                     break;
-                case STUN:
-                case SHIELDED:
-                case SPEED_BUFF:
-                    // These are handled elsewhere
-                    break;
             }
 
             if (!character.isAlive()) {
@@ -373,7 +376,7 @@ public class Battle {
         // Decrement status effect durations
         character.processStatusEffects();
 
-        // Process item buffs (decrement duration)
+        // Process Item Buffs
         character.processItemBuffs();
     }
 
@@ -400,9 +403,7 @@ public class Battle {
 
     /**
      * FR-BATTLE-005: Calculate and give rewards
-     * Experience: 50 × Enemy Level per enemy
-     * Boss Bonus: 3× EXP for boss enemies
-     * Item Drops: Probability-based
+     * Update: Menambahkan Item Drops ke Global Inventory
      */
     private void giveRewards() {
         int totalExp = 0;
@@ -411,7 +412,7 @@ public class Battle {
         for (Character enemy : enemyTeam) {
             int enemyExp = 50 * enemy.getLevel();
 
-            // Boss gives 3x EXP
+            // Boss memberikan 3x EXP
             if (enemy.isBoss()) {
                 enemyExp *= 3;
                 defeatedBoss = true;
@@ -422,12 +423,10 @@ public class Battle {
 
         battleLog.log("=== REWARDS ===");
 
-        // Show boss victory message
         if (defeatedBoss) {
             battleLog.log("🎉 BOSS DEFEATED! BONUS REWARDS! 🎉");
         }
 
-        // Give experience
         for (Character player : playerTeam) {
             if (player.isAlive()) {
                 int oldLevel = player.getLevel();
@@ -440,43 +439,36 @@ public class Battle {
             }
         }
 
-        // Item drops from enemies
+        // --- ITEM DROPS SYSTEM ---
         battleLog.log("\n=== ITEM DROPS ===");
-        for (Character player : playerTeam) {
-            if (player.isAlive()) {
-                for (Character enemy : enemyTeam) {
-                    dropItems(player, enemy);
-                }
-                break; // Only give drops to first alive player
-            }
+        for (Character enemy : enemyTeam) {
+            dropItems(enemy);
         }
     }
 
     /**
-     * Drop items from defeated enemy with probability
+     * Drop items from enemies to Global Inventory
      */
-    private void dropItems(Character player, Character enemy) {
-        Inventory inventory = player.getInventory();
-        double dropChance = Math.random();
+    private void dropItems(Character enemy) {
+        Inventory globalInv = Inventory.getInstance();
+        double dropChance = random.nextDouble();
 
-        // High rate items (60% chance): Health Potion or Mana Potion
         if (dropChance < 0.6) {
-            String item = Math.random() < 0.5 ? "Health Potion" : "Mana Potion";
-            if (inventory.addItem(item, 1)) {
+            // 60% chance common items
+            String item = random.nextBoolean() ? "Health Potion" : "Mana Potion";
+            if (globalInv.addItem(item, 1)) {
                 battleLog.log(enemy.getName() + " dropped " + item + "!");
             }
-        }
-        // Medium rate items (30% chance): Elixir, Attack Boost, Defense Boost, Antidote
-        else if (dropChance < 0.9) {
-            String[] mediumItems = { "Elixir", "Attack Boost", "Defense Boost", "Antidote" };
-            String item = mediumItems[(int) (Math.random() * mediumItems.length)];
-            if (inventory.addItem(item, 1)) {
+        } else if (dropChance < 0.9) {
+            // 30% chance medium items
+            String[] mediumItems = {"Elixir", "Attack Boost", "Defense Boost", "Antidote"};
+            String item = mediumItems[random.nextInt(mediumItems.length)];
+            if (globalInv.addItem(item, 1)) {
                 battleLog.log(enemy.getName() + " dropped " + item + "!");
             }
-        }
-        // Low rate items (10% chance): Revive
-        else {
-            if (inventory.addItem("Revive", 1)) {
+        } else {
+            // 10% chance rare items
+            if (globalInv.addItem("Revive", 1)) {
                 battleLog.log(enemy.getName() + " dropped Revive! (RARE)");
             }
         }

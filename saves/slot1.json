@@ -1,6 +1,6 @@
 {
-  "saveId": "a1292c7c-00b8-40a6-88f2-996db483d24e",
-  "savedAt": "2025-12-03T14:14:31.3450694",
+  "saveId": "74a280b0-e241-4a9f-a942-861ee4d834fa",
+  "savedAt": "2025-12-03T14:38:56.5293297",
   "saveVersion": 1,
   "characters": [
     {
@@ -53,7 +53,7 @@
       "characterClass": "MAGE",
       "element": "FIRE",
       "level": 8,
-      "experience": 250,
+      "experience": -2750,
       "currentHP": 0,
       "maxHP": 150,
       "currentMP": 100,
@@ -61,6 +61,21 @@
       "attack": 56,
       "defense": 24,
       "speed": 32,
+      "status": "DEAD"
+    },
+    {
+      "name": "L",
+      "characterClass": "MAGE",
+      "element": "FIRE",
+      "level": 2,
+      "experience": 0,
+      "currentHP": 0,
+      "maxHP": 90,
+      "currentMP": 70,
+      "maxMP": 105,
+      "attack": 38,
+      "defense": 12,
+      "speed": 26,
       "status": "DEAD"
     }
   ],
@@ -76,9 +91,13 @@
   },
   "metadata": {
     "slotName": "Save Slot 1",
-    "savedAt": "2025-12-03T14:14:31.3450694",
+    "savedAt": "2025-12-03T14:38:56.5293297",
     "totalBattles": 0,
     "highestLevel": 8,
     "highestLevelCharName": "aaw"
+  },
+  "globalInventory": {
+    "Mana Potion": 1,
+    "Health Potion": 1
   }
 }

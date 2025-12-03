@@ -110,22 +110,22 @@ public class SaveLoadService {
     /**
      * Apply loaded save data to current game
      */
+    // Di method applySaveData
     public void applySaveData(SaveData saveData) {
-        // 1. Clear current characters
+        // ... (kode restore character lama) ...
         characterService.clearAllCharacters();
-
-        // 2. Restore characters
         CharacterFactory factory = new CharacterFactory();
         for (CharacterData charData : saveData.getCharacters()) {
             com.elemental.model.Character character = charData.toCharacter(factory);
             characterService.addCharacter(character);
         }
 
-        // 3. Restore battle history
+        // ... (restore history & settings lama) ...
         battleHistory.loadFromData(saveData.getBattleHistory());
-
-        // 4. Restore settings
         GameSettings.getInstance().loadFromData(saveData.getSettings());
+
+        // BARU: Restore Global Inventory
+        Inventory.getInstance().loadFromData(saveData.getGlobalInventory());
 
         System.out.println("✓ Game state restored");
     }
@@ -244,24 +244,27 @@ public class SaveLoadService {
     /**
      * Create SaveData from current game state
      */
+    // Di method createSaveData
     private SaveData createSaveData() {
         SaveData saveData = new SaveData();
 
-        // 1. Save characters
+        // ... (save character lama) ...
         List<CharacterData> charDataList = new ArrayList<>();
         for (com.elemental.model.Character character : characterService.getAllCharacters()) {
             charDataList.add(CharacterData.fromCharacter(character));
         }
         saveData.setCharacters(charDataList);
 
-        // 2. Save battle history
+        // ... (save history & settings lama) ...
         saveData.setBattleHistory(battleHistory.toData());
-
-        // 3. Save settings
         saveData.setSettings(GameSettings.getInstance().toData());
+
+        // BARU: Save Global Inventory
+        saveData.setGlobalInventory(Inventory.getInstance().getAllItems());
 
         return saveData;
     }
+
 
     /**
      * Get file path for save slot

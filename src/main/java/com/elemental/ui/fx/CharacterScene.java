@@ -1,17 +1,23 @@
 package com.elemental.ui.fx;
 
 import com.elemental.MainFX;
+import com.elemental.factory.CharacterFactory;
 import com.elemental.model.Character;
 import com.elemental.model.CharacterClass;
 import com.elemental.model.Element;
 import com.elemental.model.GameSettings;
+import com.elemental.model.Inventory;
+import com.elemental.service.SaveLoadService; // <--- TAMBAHKAN INI
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class CharacterScene {
-    private StackPane rootStack; // Root baru
+    private StackPane rootStack;
     private BorderPane mainLayout;
     private ListView<String> charListView;
 
@@ -108,7 +114,7 @@ public class CharacterScene {
     // Custom Revive UI menggunakan MedievalPopup Logic
     private void showReviveUI() {
         // Cari karakter mati
-        java.util.List<Character> deadChars = new java.util.ArrayList<>();
+        List<Character> deadChars = new ArrayList<>();
         for(Character c : MainFX.characterService.getAllCharacters()) {
             if(!c.isAlive()) deadChars.add(c);
         }
@@ -118,15 +124,13 @@ public class CharacterScene {
             return;
         }
 
-        // Tampilkan dialog sederhana (Hanya revive karakter mati pertama untuk simplifikasi UI,
-        // atau gunakan ChoiceDialog standar jika ingin list, tapi pesan errornya pakai MedievalPopup)
-
         // Versi Simpel: Revive karakter mati pertama yang ditemukan
         Character target = deadChars.get(0);
 
-        if (!target.getInventory().hasItem("Revive")) {
+        // Check Global Inventory
+        if (!Inventory.getInstance().hasItem("Revive")) {
             MedievalPopup.show(rootStack, "MISSING ITEM",
-                    target.getName() + " needs a 'Revive' item in inventory.",
+                    "You need a 'Revive' item in Global Inventory.",
                     MedievalPopup.Type.WARNING);
             return;
         }
@@ -137,7 +141,9 @@ public class CharacterScene {
                     int reviveHP = (int) (target.getMaxHP() * 0.30);
                     target.setCurrentHP(reviveHP);
                     target.setStatus(com.elemental.model.Status.NORMAL);
-                    target.getInventory().removeItem("Revive", 1);
+
+                    // Remove from Global Inventory
+                    Inventory.getInstance().removeItem("Revive", 1);
 
                     MedievalPopup.show(rootStack, "REVIVED!",
                             target.getName() + " returned to life!", MedievalPopup.Type.SUCCESS);

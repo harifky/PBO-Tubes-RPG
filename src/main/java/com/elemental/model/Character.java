@@ -33,9 +33,6 @@ public class Character {
     private Map<StatusEffectType, Integer> activeStatusEffects; // Effect type -> remaining turns
     private int baseSpeed; // Store original speed for buff calculations
 
-    // Inventory system
-    private Inventory inventory;
-
     // Item buff tracking (separate from status effects)
     private Map<String, Integer> itemBuffs; // Buff type ("ATTACK"/"DEFENSE") -> remaining turns
     private Map<String, Integer> itemBuffValues; // Buff type -> percentage value
@@ -53,7 +50,6 @@ public class Character {
         this.status = Status.NORMAL;
         this.isDefending = false;
         this.activeStatusEffects = new HashMap<>();
-        this.inventory = new Inventory(); // Initialize with beginner items
         this.itemBuffs = new HashMap<>();
         this.itemBuffValues = new HashMap<>();
         this.isBoss = false; // Default to non-boss
@@ -385,10 +381,6 @@ public class Character {
 
     public List<Skill> getSkills() {
         return new ArrayList<>(skills);
-    }
-
-    public Inventory getInventory() {
-        return inventory;
     }
 
     public boolean isBoss() {

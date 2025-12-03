@@ -62,14 +62,11 @@ public class BattleScene {
         overlayPane = new Pane();
         overlayPane.setPickOnBounds(false);
 
-        // =========================================
-        // 2. TOP SECTION (ENEMY HUD + PAUSE)
-        // =========================================
+        // 2. TOP SECTION
         topBar = new BorderPane();
         topBar.setPadding(new Insets(15));
         BorderPane.setMargin(topBar, new Insets(10));
 
-        // -- Enemy HUD (Tengah) --
         topHudCenter = new VBox(5);
         topHudCenter.setAlignment(Pos.CENTER);
         topHudCenter.getStyleClass().add("panel-background");
@@ -87,7 +84,6 @@ public class BattleScene {
 
         topHudCenter.getChildren().addAll(enemyNameLbl, enemyHP);
 
-        // -- Tombol Pause (Kanan) --
         Button btnPause = new Button("||");
         btnPause.getStyleClass().add("button-medieval");
         btnPause.setPrefSize(45, 45);
@@ -99,14 +95,11 @@ public class BattleScene {
 
         layout.setTop(topBar);
 
-        // =========================================
         // 3. CENTER SECTION (ARENA)
-        // =========================================
         arenaContainer = new HBox();
         arenaContainer.setAlignment(Pos.CENTER);
         arenaContainer.setSpacing(150);
 
-        // Background Image + Border Kayu
         arenaContainer.setStyle(
                 "-fx-background-image: url('/assets/battle_bg.jpg');" +
                         "-fx-background-size: cover;" +
@@ -128,9 +121,7 @@ public class BattleScene {
         arenaContainer.getChildren().addAll(enemySpriteBox, playerSpriteBox);
         layout.setCenter(arenaContainer);
 
-        // =========================================
         // 4. RIGHT SECTION (LOG)
-        // =========================================
         VBox logContainer = new VBox();
         logContainer.setPadding(new Insets(10));
         logContainer.getStyleClass().add("panel-background");
@@ -149,9 +140,7 @@ public class BattleScene {
         logContainer.getChildren().addAll(logTitle, battleLog);
         layout.setRight(logContainer);
 
-        // =========================================
-        // 5. BOTTOM SECTION (PLAYER HUD)
-        // =========================================
+        // 5. BOTTOM SECTION
         bottomHud = new VBox(10);
         bottomHud.setPadding(new Insets(20));
         bottomHud.getStyleClass().add("panel-background");
@@ -223,10 +212,7 @@ public class BattleScene {
 
     public StackPane getLayout() { return rootStack; }
 
-    // =========================================
-    // UI LOGIC: MENU OVERLAYS
-    // =========================================
-
+    // --- PAUSE MENU ---
     private void showPauseMenu() {
         isPaused = true;
 
@@ -242,7 +228,6 @@ public class BattleScene {
         Button btnExit = createActionButton("EXIT TO MENU", 220, 50);
         btnExit.setStyle("-fx-background-color: #8b0000; -fx-text-fill: white; -fx-border-color: #ffd700; -fx-border-width: 2;");
         btnExit.setOnAction(e -> {
-            // MENGGUNAKAN MEDIEVAL POPUP UNTUK KONFIRMASI
             MedievalPopup.showConfirm(rootStack, "LEAVE BATTLE?",
                     "Are you sure you want to surrender?\nAll unsaved progress will be lost.",
                     () -> MainFX.primaryStage.setScene(new MainMenuScene().getScene())
@@ -268,7 +253,6 @@ public class BattleScene {
         cbAuto.setOnAction(e -> GameSettings.getInstance().setAutoProgress(cbAuto.isSelected()));
 
         settingsBox.getChildren().addAll(cbLog, cbAuto);
-
         showFancyOverlay("SETTINGS", settingsBox);
     }
 
@@ -327,7 +311,7 @@ public class BattleScene {
         }
     }
 
-    // --- Overlay Sederhana (Skill/Item) ---
+    // --- Overlay Skill/Item ---
     private void showOverlayMenu(String title, Node content) {
         StackPane overlayBg = new StackPane();
         overlayBg.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7);");
@@ -379,19 +363,24 @@ public class BattleScene {
     private void showItemSelection() {
         if (isPaused) return;
 
-        Character player = MainFX.battleService.getCurrentBattle().getPlayerTeam().get(0);
-        Inventory inv = player.getInventory();
+        // UPDATE: Menggunakan Global Inventory
+        Inventory inv = Inventory.getInstance();
+
         VBox itemList = new VBox(10);
         itemList.setAlignment(Pos.CENTER);
 
         Map<String, Integer> items = inv.getAllItems();
 
         if (items.isEmpty()) {
-            itemList.getChildren().add(new Label("Inventory Empty!"));
+            itemList.getChildren().add(new Label("Global Inventory is Empty!"));
         } else {
             for (Map.Entry<String, Integer> entry : items.entrySet()) {
                 String itemName = entry.getKey();
                 int qty = entry.getValue();
+
+                // Skip jika habis
+                if (qty <= 0) continue;
+
                 Item itemTemplate = ItemFactory.getItem(itemName);
 
                 Button btn = new Button(String.format("%s (x%d)", itemName, qty));
@@ -411,9 +400,7 @@ public class BattleScene {
         showOverlayMenu("SELECT ITEM", itemList);
     }
 
-    // =========================================
-    // GAME LOGIC & ANIMATION
-    // =========================================
+    // --- LOGIC ---
 
     private void initialUpdate() {
         Battle battle = MainFX.battleService.getCurrentBattle();
@@ -483,7 +470,6 @@ public class BattleScene {
     }
 
     private void updateBars(Character p, Character e) {
-        // Logika sederhana untuk indikator Boss
         boolean isBoss = e.getLevel() >= 5 && e.getLevel() % 5 == 0;
         String bossIndicator = isBoss ? " 👑 BOSS" : "";
 
@@ -542,47 +528,46 @@ public class BattleScene {
         pause.play();
     }
 
-    // MENGGUNAKAN MEDIEVAL POPUP UNTUK HASIL BATTLE
     private void handleBattleEnd(BattleStatus status) {
-        actionMenu.setDisable(true); // Kunci tombol
+        actionMenu.setDisable(true);
 
-        // Auto Save
         if (MainFX.saveLoadService != null) {
             MainFX.saveLoadService.autoSave();
         }
 
-        if (status == BattleStatus.VICTORY) {
-            // Menang: Tanya mau lanjut atau keluar?
-            MedievalPopup.showConfirm(rootStack, "VICTORY!",
-                    "Enemy defeated!\nYou gained experience and loot.\n\nContinue to next battle?",
-                    () -> { // YES -> Lanjut Battle
-                        try {
-                            Character player = MainFX.battleService.getCurrentBattle().getPlayerTeam().get(0);
-                            List<Character> enemies = generateEnemyTeam(player.getLevel());
-                            MainFX.battleService.startBattle(Collections.singletonList(player), enemies);
+        String title;
+        String msg;
+        MedievalPopup.Type type;
 
-                            // Refresh Scene
-                            MainFX.primaryStage.getScene().setRoot(new BattleScene().getLayout());
-                        } catch (Exception e) {
-                            MainFX.primaryStage.setScene(new MainMenuScene().getScene());
-                        }
-                    },
-                    () -> { // NO -> Balik ke Menu
+        if (status == BattleStatus.VICTORY) {
+            title = "VICTORY!";
+            msg = "Enemy defeated!\nYou gained experience and loot.\nGame Auto-saved.";
+            type = MedievalPopup.Type.VICTORY;
+        } else {
+            title = "DEFEAT...";
+            msg = "You have fallen in battle...\nBetter luck next time.";
+            type = MedievalPopup.Type.DEFEAT;
+        }
+
+        MedievalPopup.showConfirm(rootStack, title,
+                msg + "\n\nContinue to next battle?",
+                () -> { // YES -> Continue
+                    try {
+                        Character player = MainFX.battleService.getCurrentBattle().getPlayerTeam().get(0);
+                        List<Character> enemies = generateEnemyTeam(player.getLevel());
+                        MainFX.battleService.startBattle(Collections.singletonList(player), enemies);
+                        MainFX.primaryStage.getScene().setRoot(new BattleScene().getLayout());
+                    } catch (Exception e) {
                         MainFX.primaryStage.setScene(new MainMenuScene().getScene());
                     }
-            );
-        } else {
-            // Kalah: Hanya bisa keluar
-            MedievalPopup.show(rootStack, "DEFEAT...",
-                    "You have fallen in battle...\nBetter luck next time.",
-                    MedievalPopup.Type.DEFEAT,
-                    () -> MainFX.primaryStage.setScene(new MainMenuScene().getScene())
-            );
-        }
+                },
+                () -> { // NO -> Menu
+                    MainFX.primaryStage.setScene(new MainMenuScene().getScene());
+                }
+        );
     }
 
     private List<Character> generateEnemyTeam(int playerLevel) {
-        // Logic generate enemy (Boss setiap kelipatan 5)
         if (playerLevel >= 5 && playerLevel % 5 == 0) {
             String[] bossNames = {"Dragon", "Phoenix", "Golem", "Wraith", "Demon Lord"};
             String bossName = bossNames[(playerLevel / 5 - 1) % bossNames.length];
