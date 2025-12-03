@@ -230,7 +230,7 @@ public class BattleScene {
         btnExit.setOnAction(e -> {
             MedievalPopup.showConfirm(rootStack, "LEAVE BATTLE?",
                     "Are you sure you want to surrender?\nAll unsaved progress will be lost.",
-                    () -> MainFX.primaryStage.setScene(new MainMenuScene().getScene())
+                    () -> MainFX.showMainMenu() // <--- GANTI JADI INI
             );
         });
 
@@ -558,11 +558,11 @@ public class BattleScene {
                         MainFX.battleService.startBattle(Collections.singletonList(player), enemies);
                         MainFX.primaryStage.getScene().setRoot(new BattleScene().getLayout());
                     } catch (Exception e) {
-                        MainFX.primaryStage.setScene(new MainMenuScene().getScene());
+                        MainFX.showMainMenu(); // <--- GANTI JADI INI
                     }
                 },
                 () -> { // NO -> Menu
-                    MainFX.primaryStage.setScene(new MainMenuScene().getScene());
+                    MainFX.showMainMenu(); // <--- GANTI JADI INI
                 }
         );
     }

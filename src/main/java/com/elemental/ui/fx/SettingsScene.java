@@ -18,21 +18,19 @@ public class SettingsScene {
     public SettingsScene() {
         layout = new VBox(20);
         layout.setAlignment(Pos.CENTER);
-        layout.getStyleClass().add("root"); // Background gelap
+        layout.getStyleClass().add("root");
         layout.setPadding(new Insets(20));
 
-        // --- TITLE ---
         Label title = new Label("Game Settings");
         title.getStyleClass().add("game-title");
 
-        // --- PANEL UTAMA ---
         VBox settingsPanel = new VBox(15);
         settingsPanel.getStyleClass().add("panel-background");
         settingsPanel.setMaxWidth(500);
         settingsPanel.setPadding(new Insets(30));
         settingsPanel.setAlignment(Pos.CENTER);
 
-        // 1. AI DIFFICULTY
+        // AI DIFFICULTY
         Label lblDiff = new Label("AI Difficulty");
         lblDiff.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
 
@@ -43,7 +41,6 @@ public class SettingsScene {
         Button btnMed = createToggleBtn("MEDIUM", AIDifficulty.MEDIUM);
         Button btnHard = createToggleBtn("HARD", AIDifficulty.HARD);
 
-        // Update visual state tombol saat diklik
         updateButtonStyles(btnEasy, btnMed, btnHard);
 
         btnEasy.setOnAction(e -> {
@@ -61,7 +58,7 @@ public class SettingsScene {
 
         diffBox.getChildren().addAll(btnEasy, btnMed, btnHard);
 
-        // 2. OTHER SETTINGS
+        // OTHER SETTINGS
         CheckBox cbLog = new CheckBox("Show Detailed Battle Log");
         cbLog.setSelected(GameSettings.getInstance().isShowDetailedLog());
         cbLog.setStyle("-fx-font-size: 14px;");
@@ -77,13 +74,14 @@ public class SettingsScene {
         cbAutoSave.setStyle("-fx-font-size: 14px;");
         cbAutoSave.setOnAction(e -> GameSettings.getInstance().setAutoSave(cbAutoSave.isSelected()));
 
-        // --- BACK BUTTON ---
+        // --- BACK BUTTON (UPDATED) ---
         Button btnBack = new Button("Save & Back");
         btnBack.getStyleClass().add("button-medieval");
         btnBack.setPrefWidth(200);
-        btnBack.setOnAction(e -> MainFX.primaryStage.setScene(new MainMenuScene().getScene()));
 
-        // Susun Layout
+        // PENTING: Gunakan method helper ini
+        btnBack.setOnAction(e -> MainFX.showMainMenu());
+
         settingsPanel.getChildren().addAll(
                 lblDiff, diffBox,
                 new Separator(),
@@ -102,13 +100,10 @@ public class SettingsScene {
         return btn;
     }
 
-    // Ubah warna tombol berdasarkan mana yang aktif
     private void updateButtonStyles(Button bEasy, Button bMed, Button bHard) {
         AIDifficulty current = GameSettings.getInstance().getAIDifficulty();
-
-        // Reset style
         String inactive = "";
-        String active = "-fx-background-color: #ffd700; -fx-text-fill: #3e1903;"; // Emas
+        String active = "-fx-background-color: #ffd700; -fx-text-fill: #3e1903;";
 
         bEasy.setStyle(current == AIDifficulty.EASY ? active : inactive);
         bMed.setStyle(current == AIDifficulty.MEDIUM ? active : inactive);

@@ -12,12 +12,10 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class SaveLoadScene {
-    // GANTI: Root utama jadi StackPane untuk support Popup
     private StackPane rootStack;
     private BorderPane layout;
     private VBox slotsContainer;
@@ -25,8 +23,6 @@ public class SaveLoadScene {
 
     public SaveLoadScene(boolean isSaveMode) {
         this.isSaveMode = isSaveMode;
-
-        // Inisialisasi Root Stack
         rootStack = new StackPane();
         rootStack.getStyleClass().add("root");
 
@@ -46,24 +42,23 @@ public class SaveLoadScene {
 
         layout.setCenter(slotsContainer);
 
+        // --- BACK BUTTON (UPDATED) ---
         Button btnBack = new Button("Back");
         btnBack.getStyleClass().add("button-medieval");
         btnBack.setPrefWidth(150);
-        btnBack.setOnAction(e -> MainFX.primaryStage.setScene(new MainMenuScene().getScene()));
+        btnBack.setOnAction(e -> MainFX.showMainMenu());
 
         VBox bottomBox = new VBox(btnBack);
         bottomBox.setAlignment(Pos.CENTER);
         bottomBox.setPadding(new Insets(20));
         layout.setBottom(bottomBox);
 
-        // Masukkan layout ke rootStack
         rootStack.getChildren().add(layout);
     }
 
     private void refreshSlots() {
         slotsContainer.getChildren().clear();
         List<SaveMetadata> allMeta = MainFX.saveLoadService.getAllSaveMetadata();
-
         for (int i = 0; i < 3; i++) {
             int slotNum = i + 1;
             SaveMetadata meta = (i < allMeta.size()) ? allMeta.get(i) : null;
@@ -91,11 +86,7 @@ public class SaveLoadScene {
         } else {
             String dateStr = meta.getSavedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
             lblDetail.setText(String.format("Lv.%d %s | Battles: %d\n%s",
-                    meta.getHighestLevel(),
-                    meta.getHighestLevelCharName(),
-                    meta.getTotalBattles(),
-                    dateStr
-            ));
+                    meta.getHighestLevel(), meta.getHighestLevelCharName(), meta.getTotalBattles(), dateStr));
         }
         infoBox.getChildren().addAll(lblSlotName, lblDetail);
         HBox.setHgrow(infoBox, Priority.ALWAYS);
@@ -127,11 +118,8 @@ public class SaveLoadScene {
         return card;
     }
 
-    // --- GANTI ALERT DENGAN MEDIEVAL POPUP ---
-
     private void handleSave(int slotNum) {
         if (MainFX.saveLoadService.saveSlotExists(slotNum)) {
-            // Konfirmasi Overwrite
             MedievalPopup.showConfirm(rootStack, "OVERWRITE SAVE?",
                     "Slot " + slotNum + " already has data.\nOverwrite it?",
                     () -> performSave(slotNum));
@@ -144,9 +132,7 @@ public class SaveLoadScene {
         try {
             MainFX.saveLoadService.saveGame(slotNum);
             refreshSlots();
-            MedievalPopup.show(rootStack, "GAME SAVED",
-                    "Your progress has been saved to Slot " + slotNum + ".",
-                    MedievalPopup.Type.SUCCESS);
+            MedievalPopup.show(rootStack, "GAME SAVED", "Your progress has been saved to Slot " + slotNum + ".", MedievalPopup.Type.SUCCESS);
         } catch (Exception e) {
             MedievalPopup.show(rootStack, "SAVE FAILED", e.getMessage(), MedievalPopup.Type.ERROR);
         }
@@ -160,7 +146,8 @@ public class SaveLoadScene {
             MedievalPopup.show(rootStack, "GAME LOADED",
                     "Welcome back, Hero!\nGame loaded successfully.",
                     MedievalPopup.Type.SUCCESS,
-                    () -> MainFX.primaryStage.setScene(new MainMenuScene().getScene()) // Balik ke menu setelah OK
+                    // PENTING: Gunakan MainFX.showMainMenu() setelah load sukses
+                    () -> MainFX.showMainMenu()
             );
 
         } catch (Exception e) {
@@ -182,6 +169,5 @@ public class SaveLoadScene {
                 });
     }
 
-    // Penting: Return rootStack (bukan layout) karena popup ada di stack
     public StackPane getLayout() { return rootStack; }
 }

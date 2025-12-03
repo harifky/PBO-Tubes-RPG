@@ -1,18 +1,14 @@
 package com.elemental.ui.fx;
 
 import com.elemental.MainFX;
-import com.elemental.factory.CharacterFactory;
 import com.elemental.model.Character;
 import com.elemental.model.CharacterClass;
 import com.elemental.model.Element;
 import com.elemental.model.GameSettings;
 import com.elemental.model.Inventory;
-import com.elemental.service.SaveLoadService; // <--- TAMBAHKAN INI
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,14 +18,12 @@ public class CharacterScene {
     private ListView<String> charListView;
 
     public CharacterScene() {
-        // Init Root Stack untuk Overlay
         rootStack = new StackPane();
         rootStack.getStyleClass().add("root");
 
         mainLayout = new BorderPane();
         mainLayout.setPadding(new Insets(20));
 
-        // --- LEFT: CREATE FORM ---
         VBox createPanel = new VBox(10);
         createPanel.getStyleClass().add("panel-background");
         createPanel.setPadding(new Insets(15));
@@ -58,14 +52,11 @@ public class CharacterScene {
                         classBox.getValue(),
                         elementBox.getValue()
                 );
-
-                // Auto-save logic
                 String msg = "Character " + newChar.getName() + " created!";
                 if (GameSettings.getInstance().isAutoSave()) {
                     MainFX.saveLoadService.autoSave();
                     msg += "\nGame auto-saved.";
                 }
-
                 MedievalPopup.show(rootStack, "SUCCESS", msg, MedievalPopup.Type.SUCCESS);
                 refreshList();
                 nameInput.clear();
@@ -78,16 +69,15 @@ public class CharacterScene {
         btnRevive.getStyleClass().add("button-medieval");
         btnRevive.setOnAction(e -> showReviveUI());
 
+        // --- BACK BUTTON (UPDATED) ---
         Button btnBack = new Button("Back to Menu");
         btnBack.getStyleClass().add("button-medieval");
-        btnBack.setOnAction(e -> MainFX.primaryStage.setScene(new MainMenuScene().getScene()));
+        btnBack.setOnAction(e -> MainFX.showMainMenu());
 
         createPanel.getChildren().addAll(lblCreate, new Label("Name:"), nameInput,
-                new Label("Class:"), classBox,
-                new Label("Element:"), elementBox,
+                new Label("Class:"), classBox, new Label("Element:"), elementBox,
                 new Separator(), btnCreate, btnRevive, btnBack);
 
-        // --- RIGHT: LIST VIEW ---
         VBox listPanel = new VBox(10);
         listPanel.getStyleClass().add("panel-background");
         listPanel.setPadding(new Insets(15));
@@ -111,9 +101,7 @@ public class CharacterScene {
         }
     }
 
-    // Custom Revive UI menggunakan MedievalPopup Logic
     private void showReviveUI() {
-        // Cari karakter mati
         List<Character> deadChars = new ArrayList<>();
         for(Character c : MainFX.characterService.getAllCharacters()) {
             if(!c.isAlive()) deadChars.add(c);
@@ -124,14 +112,11 @@ public class CharacterScene {
             return;
         }
 
-        // Versi Simpel: Revive karakter mati pertama yang ditemukan
         Character target = deadChars.get(0);
 
-        // Check Global Inventory
         if (!Inventory.getInstance().hasItem("Revive")) {
             MedievalPopup.show(rootStack, "MISSING ITEM",
-                    "You need a 'Revive' item in Global Inventory.",
-                    MedievalPopup.Type.WARNING);
+                    "You need a 'Revive' item in Global Inventory.", MedievalPopup.Type.WARNING);
             return;
         }
 
@@ -141,18 +126,12 @@ public class CharacterScene {
                     int reviveHP = (int) (target.getMaxHP() * 0.30);
                     target.setCurrentHP(reviveHP);
                     target.setStatus(com.elemental.model.Status.NORMAL);
-
-                    // Remove from Global Inventory
                     Inventory.getInstance().removeItem("Revive", 1);
-
-                    MedievalPopup.show(rootStack, "REVIVED!",
-                            target.getName() + " returned to life!", MedievalPopup.Type.SUCCESS);
+                    MedievalPopup.show(rootStack, "REVIVED!", target.getName() + " returned to life!", MedievalPopup.Type.SUCCESS);
                     refreshList();
                 }
         );
     }
 
-    public StackPane getLayout() {
-        return rootStack;
-    }
+    public StackPane getLayout() { return rootStack; }
 }
