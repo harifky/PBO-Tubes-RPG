@@ -1,44 +1,74 @@
 {
-  "saveId": "4caa4c7a-f790-451a-9281-857e69f0b6ea",
-  "savedAt": "2025-12-03T13:27:45.0238652",
+  "saveId": "21d14dd4-027a-41fa-b892-a296e6416109",
+  "savedAt": "2025-12-03T13:59:52.8530697",
   "saveVersion": 1,
   "characters": [
     {
-      "name": "iky",
-      "characterClass": "WARRIOR",
-      "element": "FIRE",
-      "level": 2,
-      "experience": 100,
-      "currentHP": 0,
-      "maxHP": 130,
-      "currentMP": 35,
-      "maxMP": 55,
-      "attack": 28,
-      "defense": 22,
-      "speed": 16,
-      "status": "DEAD"
-    },
-    {
-      "name": "iky2",
+      "name": "Samudra",
       "characterClass": "WARRIOR",
       "element": "FIRE",
       "level": 1,
-      "experience": 0,
-      "currentHP": 120,
+      "experience": 50,
+      "currentHP": 0,
       "maxHP": 120,
-      "currentMP": 50,
+      "currentMP": 40,
       "maxMP": 50,
       "attack": 25,
       "defense": 20,
       "speed": 15,
-      "status": "NORMAL"
+      "status": "DEAD"
+    },
+    {
+      "name": "Seruni",
+      "characterClass": "MAGE",
+      "element": "FIRE",
+      "level": 1,
+      "experience": 50,
+      "currentHP": 0,
+      "maxHP": 80,
+      "currentMP": 50,
+      "maxMP": 100,
+      "attack": 35,
+      "defense": 10,
+      "speed": 25,
+      "status": "DEAD"
+    },
+    {
+      "name": "Hafizh",
+      "characterClass": "MAGE",
+      "element": "EARTH",
+      "level": 1,
+      "experience": 0,
+      "currentHP": 0,
+      "maxHP": 80,
+      "currentMP": 60,
+      "maxMP": 100,
+      "attack": 35,
+      "defense": 10,
+      "speed": 25,
+      "status": "DEAD"
+    },
+    {
+      "name": "ad",
+      "characterClass": "MAGE",
+      "element": "WATER",
+      "level": 2,
+      "experience": 0,
+      "currentHP": 0,
+      "maxHP": 90,
+      "currentMP": 105,
+      "maxMP": 105,
+      "attack": 38,
+      "defense": 12,
+      "speed": 26,
+      "status": "DEAD"
     }
   ],
   "battleHistory": {
-    "totalBattles": 1,
-    "wins": 1,
+    "totalBattles": 0,
+    "wins": 0,
     "losses": 0,
-    "totalEnemiesDefeated": 1
+    "totalEnemiesDefeated": 0
   },
   "settings": {
     "aiDifficulty": "MEDIUM",
@@ -46,9 +76,9 @@
   },
   "metadata": {
     "slotName": "Save Slot 3",
-    "savedAt": "2025-12-03T13:27:45.0238652",
-    "totalBattles": 1,
+    "savedAt": "2025-12-03T13:59:52.8530697",
+    "totalBattles": 0,
     "highestLevel": 2,
-    "highestLevelCharName": "iky"
+    "highestLevelCharName": "ad"
   }
 }

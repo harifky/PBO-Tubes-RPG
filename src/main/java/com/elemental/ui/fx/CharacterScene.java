@@ -4,19 +4,24 @@ import com.elemental.MainFX;
 import com.elemental.model.Character;
 import com.elemental.model.CharacterClass;
 import com.elemental.model.Element;
+import com.elemental.model.GameSettings;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
 public class CharacterScene {
-    private BorderPane layout;
+    private StackPane rootStack; // Root baru
+    private BorderPane mainLayout;
     private ListView<String> charListView;
 
     public CharacterScene() {
-        layout = new BorderPane();
-        layout.getStyleClass().add("root");
-        layout.setPadding(new Insets(20));
+        // Init Root Stack untuk Overlay
+        rootStack = new StackPane();
+        rootStack.getStyleClass().add("root");
+
+        mainLayout = new BorderPane();
+        mainLayout.setPadding(new Insets(20));
 
         // --- LEFT: CREATE FORM ---
         VBox createPanel = new VBox(10);
@@ -48,24 +53,24 @@ public class CharacterScene {
                         elementBox.getValue()
                 );
 
-                // Auto-save if enabled
-                if (com.elemental.model.GameSettings.getInstance().isAutoSave()) {
+                // Auto-save logic
+                String msg = "Character " + newChar.getName() + " created!";
+                if (GameSettings.getInstance().isAutoSave()) {
                     MainFX.saveLoadService.autoSave();
-                    showInfoAlert("Success", "Character created!\n💾 Game auto-saved!");
-                } else {
-                    showInfoAlert("Success", "Character created!");
+                    msg += "\nGame auto-saved.";
                 }
 
+                MedievalPopup.show(rootStack, "SUCCESS", msg, MedievalPopup.Type.SUCCESS);
                 refreshList();
                 nameInput.clear();
             } catch (Exception ex) {
-                showAlert("Error", ex.getMessage());
+                MedievalPopup.show(rootStack, "ERROR", ex.getMessage(), MedievalPopup.Type.ERROR);
             }
         });
 
-        Button btnRevive = new Button("⚕️ Revive Dead Character");
+        Button btnRevive = new Button("Revive Dead Character");
         btnRevive.getStyleClass().add("button-medieval");
-        btnRevive.setOnAction(e -> showReviveDialog());
+        btnRevive.setOnAction(e -> showReviveUI());
 
         Button btnBack = new Button("Back to Menu");
         btnBack.getStyleClass().add("button-medieval");
@@ -86,9 +91,11 @@ public class CharacterScene {
 
         listPanel.getChildren().addAll(new Label("Your Roster"), charListView);
 
-        layout.setLeft(createPanel);
-        layout.setCenter(listPanel);
+        mainLayout.setLeft(createPanel);
+        mainLayout.setCenter(listPanel);
         BorderPane.setMargin(listPanel, new Insets(0, 0, 0, 20));
+
+        rootStack.getChildren().add(mainLayout);
     }
 
     private void refreshList() {
@@ -98,78 +105,48 @@ public class CharacterScene {
         }
     }
 
-    private void showAlert(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setContentText(content);
-        alert.showAndWait();
-    }
-
-    private void showInfoAlert(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setContentText(content);
-        alert.showAndWait();
-    }
-
-    private void showReviveDialog() {
-        // Find dead characters
-        java.util.List<Character> deadCharacters = new java.util.ArrayList<>();
-        for (Character c : MainFX.characterService.getAllCharacters()) {
-            if (!c.isAlive()) {
-                deadCharacters.add(c);
-            }
+    // Custom Revive UI menggunakan MedievalPopup Logic
+    private void showReviveUI() {
+        // Cari karakter mati
+        java.util.List<Character> deadChars = new java.util.ArrayList<>();
+        for(Character c : MainFX.characterService.getAllCharacters()) {
+            if(!c.isAlive()) deadChars.add(c);
         }
 
-        if (deadCharacters.isEmpty()) {
-            showInfoAlert("No Dead Characters", "✓ All characters are alive! No one needs reviving.");
+        if(deadChars.isEmpty()) {
+            MedievalPopup.show(rootStack, "INFO", "No dead characters to revive.", MedievalPopup.Type.INFO);
             return;
         }
 
-        // Create choice dialog
-        ChoiceDialog<Character> dialog = new ChoiceDialog<>(deadCharacters.get(0), deadCharacters);
-        dialog.setTitle("⚕️ Revive Dead Character");
-        dialog.setHeaderText("Select character to revive:");
-        dialog.setContentText("Dead character:");
+        // Tampilkan dialog sederhana (Hanya revive karakter mati pertama untuk simplifikasi UI,
+        // atau gunakan ChoiceDialog standar jika ingin list, tapi pesan errornya pakai MedievalPopup)
 
-        dialog.showAndWait().ifPresent(toRevive -> {
-            // Check if has Revive item
-            if (!toRevive.getInventory().hasItem("Revive")) {
-                showAlert("No Revive Item",
-                    toRevive.getName() + " doesn't have a Revive item!\n\n" +
-                    "💡 Tip: Revive items can be obtained during battles.");
-                return;
-            }
+        // Versi Simpel: Revive karakter mati pertama yang ditemukan
+        Character target = deadChars.get(0);
 
-            // Confirm revive
-            Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
-            confirmAlert.setTitle("Confirm Revive");
-            confirmAlert.setHeaderText("Use 1 Revive item to restore " + toRevive.getName() + " with 30% HP?");
-            confirmAlert.setContentText("This action will consume 1 Revive item.");
+        if (!target.getInventory().hasItem("Revive")) {
+            MedievalPopup.show(rootStack, "MISSING ITEM",
+                    target.getName() + " needs a 'Revive' item in inventory.",
+                    MedievalPopup.Type.WARNING);
+            return;
+        }
 
-            confirmAlert.showAndWait().ifPresent(response -> {
-                if (response == ButtonType.OK) {
-                    // Apply revive effect (30% HP)
-                    int reviveHP = (int) (toRevive.getMaxHP() * 0.30);
-                    toRevive.setCurrentHP(reviveHP);
-                    toRevive.setStatus(com.elemental.model.Status.NORMAL);
+        MedievalPopup.showConfirm(rootStack, "REVIVE CHARACTER",
+                "Revive " + target.getName() + " using 1 Revive item?",
+                () -> {
+                    int reviveHP = (int) (target.getMaxHP() * 0.30);
+                    target.setCurrentHP(reviveHP);
+                    target.setStatus(com.elemental.model.Status.NORMAL);
+                    target.getInventory().removeItem("Revive", 1);
 
-                    // Remove Revive item
-                    toRevive.getInventory().removeItem("Revive", 1);
-
-                    // Show success
-                    showInfoAlert("✨ Revival Successful!",
-                        "💚 " + toRevive.getName() + " has been revived!\n" +
-                        "HP Restored: " + reviveHP + "/" + toRevive.getMaxHP() + " (30%)\n" +
-                        "Status: NORMAL");
-
+                    MedievalPopup.show(rootStack, "REVIVED!",
+                            target.getName() + " returned to life!", MedievalPopup.Type.SUCCESS);
                     refreshList();
                 }
-            });
-        });
+        );
     }
 
-    public BorderPane getLayout() {
-        return layout;
+    public StackPane getLayout() {
+        return rootStack;
     }
 }

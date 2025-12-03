@@ -20,7 +20,7 @@ public class MedievalPopup {
     }
 
     /**
-     * Menampilkan pesan Info/Success/Error dengan satu tombol OK
+     * Menampilkan pesan standar (OK only)
      */
     public static void show(StackPane root, String title, String message, Type type) {
         show(root, title, message, type, null);
@@ -49,9 +49,14 @@ public class MedievalPopup {
     }
 
     /**
-     * Menampilkan konfirmasi (YES/NO)
+     * Menampilkan konfirmasi (YES / NO)
      */
     public static void showConfirm(StackPane root, String title, String message, Runnable onYes) {
+        showConfirm(root, title, message, onYes, null);
+    }
+
+    // UPDATE: Menambahkan parameter onNo
+    public static void showConfirm(StackPane root, String title, String message, Runnable onYes, Runnable onNo) {
         StackPane overlay = createOverlay(root);
         VBox dialog = createDialogBox(Type.WARNING);
 
@@ -66,13 +71,16 @@ public class MedievalPopup {
         btnYes.setPrefWidth(80);
         btnYes.setOnAction(e -> {
             close(root, overlay);
-            onYes.run();
+            if (onYes != null) onYes.run();
         });
 
         Button btnNo = new Button("NO");
         btnNo.getStyleClass().add("button-medieval");
         btnNo.setPrefWidth(80);
-        btnNo.setOnAction(e -> close(root, overlay));
+        btnNo.setOnAction(e -> {
+            close(root, overlay);
+            if (onNo != null) onNo.run();
+        });
 
         btnBox.getChildren().addAll(btnYes, btnNo);
         dialog.getChildren().addAll(lblTitle, new Separator(), lblMsg, new Separator(), btnBox);
@@ -82,7 +90,7 @@ public class MedievalPopup {
         root.getChildren().add(overlay);
     }
 
-    // --- HELPER METHODS ---
+    // --- HELPER METHODS (Sama seperti sebelumnya) ---
 
     private static StackPane createOverlay(StackPane root) {
         StackPane overlay = new StackPane();
@@ -96,7 +104,6 @@ public class MedievalPopup {
         box.setMaxSize(400, 250);
         box.setPadding(new javafx.geometry.Insets(20));
 
-        // Warna border berbeda tergantung tipe
         String borderColor = "#ffd700"; // Default Gold
         if (type == Type.ERROR || type == Type.DEFEAT) borderColor = "#ff3333"; // Merah
         if (type == Type.SUCCESS || type == Type.VICTORY) borderColor = "#33ff33"; // Hijau
@@ -116,6 +123,7 @@ public class MedievalPopup {
         Label lbl = new Label(text);
         String color = "#ffd700";
         if (type == Type.ERROR || type == Type.DEFEAT) color = "#ff3333";
+        if (type == Type.SUCCESS || type == Type.VICTORY) color = "#33ff33";
 
         lbl.setStyle(
                 "-fx-font-family: 'Times New Roman';" +

@@ -1,6 +1,6 @@
 {
-  "saveId": "f4daeace-dbd0-49bc-931c-34168cbf67ef",
-  "savedAt": "2025-12-03T13:38:36.7411593",
+  "saveId": "a1292c7c-00b8-40a6-88f2-996db483d24e",
+  "savedAt": "2025-12-03T14:14:31.3450694",
   "saveVersion": 1,
   "characters": [
     {
@@ -47,6 +47,21 @@
       "defense": 10,
       "speed": 25,
       "status": "DEAD"
+    },
+    {
+      "name": "aaw",
+      "characterClass": "MAGE",
+      "element": "FIRE",
+      "level": 8,
+      "experience": 250,
+      "currentHP": 0,
+      "maxHP": 150,
+      "currentMP": 100,
+      "maxMP": 135,
+      "attack": 56,
+      "defense": 24,
+      "speed": 32,
+      "status": "DEAD"
     }
   ],
   "battleHistory": {
@@ -61,9 +76,9 @@
   },
   "metadata": {
     "slotName": "Save Slot 1",
-    "savedAt": "2025-12-03T13:38:36.7411593",
+    "savedAt": "2025-12-03T14:14:31.3450694",
     "totalBattles": 0,
-    "highestLevel": 1,
-    "highestLevelCharName": "Samudra"
+    "highestLevel": 8,
+    "highestLevelCharName": "aaw"
   }
 }

@@ -3,192 +3,148 @@ package com.elemental.ui.fx;
 import com.elemental.MainFX;
 import com.elemental.factory.EnemyFactory;
 import com.elemental.model.Character;
+import com.elemental.model.GameSettings;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.util.StringConverter;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class BattleSetupScene {
-    private VBox layout;
+    private StackPane rootStack;
+    private VBox content;
 
     public BattleSetupScene() {
-        layout = new VBox(20);
-        layout.setAlignment(Pos.CENTER);
-        layout.getStyleClass().add("root");
+        rootStack = new StackPane();
+        rootStack.getStyleClass().add("root");
+
+        content = new VBox(20);
+        content.setAlignment(Pos.CENTER);
 
         Label title = new Label("Prepare for Battle");
         title.getStyleClass().add("game-title");
 
+        // Dropdown Pilihan Karakter
         ComboBox<Character> charSelect = new ComboBox<>();
-        charSelect.getItems().addAll(MainFX.characterService.getAllCharacters());
+
+        // --- BARU: LOGIKA SORTING (FILTERING) ---
+        // Ambil semua karakter
+        List<Character> allChars = MainFX.characterService.getAllCharacters();
+
+        // Urutkan: Yang Hidup di atas, lalu urutkan berdasarkan Level tertinggi
+        allChars.sort((c1, c2) -> {
+            // 1. Cek Status Hidup (Alive vs Dead)
+            boolean alive1 = c1.isAlive();
+            boolean alive2 = c2.isAlive();
+
+            if (alive1 != alive2) {
+                return alive1 ? -1 : 1; // Jika c1 hidup, dia naik (-1)
+            }
+
+            // 2. Jika status sama, urutkan berdasarkan Level (Tertinggi di atas)
+            return Integer.compare(c2.getLevel(), c1.getLevel());
+        });
+
+        // Masukkan list yang sudah diurutkan
+        charSelect.getItems().addAll(allChars);
+        // ----------------------------------------
+
+        charSelect.setPromptText("Select Your Hero");
+
+        // Custom Tampilan untuk cek status DEAD
+        charSelect.setConverter(new StringConverter<Character>() {
+            @Override
+            public String toString(Character c) {
+                if (c == null) return null;
+                // Jika mati, tambahkan keterangan (DEAD) dan beri visual pembeda
+                String statusSuffix = c.isAlive() ? "" : " (DEAD 💀)";
+                return c.toString() + statusSuffix;
+            }
+
+            @Override
+            public Character fromString(String string) {
+                return null;
+            }
+        });
+
+        // Otomatis pilih karakter pertama (yang pasti hidup & level tertinggi jika ada)
+        if (!charSelect.getItems().isEmpty()) {
+            charSelect.getSelectionModel().selectFirst();
+        }
 
         Button btnStart = new Button("FIGHT!");
         btnStart.getStyleClass().add("button-medieval");
         btnStart.setOnAction(e -> {
             Character selected = charSelect.getValue();
-            if (selected != null && selected.isAlive()) {
-                // Generate Enemy (with Boss system)
-                List<Character> enemies = generateEnemyTeam(selected.getLevel());
-                MainFX.battleService.startBattle(Collections.singletonList(selected), enemies);
 
-                // Pindah ke Scene Pertarungan
-                MainFX.primaryStage.getScene().setRoot(new BattleScene().getLayout());
-            } else {
-                new Alert(Alert.AlertType.WARNING, "Select an alive character!").show();
+            if (selected == null) {
+                MedievalPopup.show(rootStack, "NO HERO SELECTED",
+                        "Please select a character first!",
+                        MedievalPopup.Type.WARNING);
+                return;
             }
+
+            if (!selected.isAlive()) {
+                MedievalPopup.show(rootStack, "HERO IS DEAD",
+                        selected.getName() + " cannot fight!\nRevive them in Character Management.",
+                        MedievalPopup.Type.ERROR);
+                return;
+            }
+
+            // Jika hidup, cek Boss Battle & Mulai
+            checkAndStartBattle(selected);
         });
 
         Button btnBack = new Button("Retreat");
         btnBack.getStyleClass().add("button-medieval");
         btnBack.setOnAction(e -> MainFX.primaryStage.setScene(new MainMenuScene().getScene()));
 
-        layout.getChildren().addAll(title, charSelect, btnStart, btnBack);
+        content.getChildren().addAll(title, charSelect, btnStart, btnBack);
+        rootStack.getChildren().add(content);
     }
 
-    public VBox getLayout() { return layout; }
+    private void checkAndStartBattle(Character player) {
+        int level = player.getLevel();
 
-    /**
-     * Generate enemy team with boss system and smart difficulty
-     * Boss appears at level 5, 10, 15, 20, 25, ...
-     */
-    private List<Character> generateEnemyTeam(int playerLevel) {
-        // Get player element for smart generation
-        com.elemental.model.Element playerElement = null;
-        for (Character c : MainFX.characterService.getAllCharacters()) {
-            if (c.getLevel() == playerLevel) {
-                playerElement = c.getElement();
-                break;
-            }
-        }
-
-        // Check if player level is 5 or multiple of 5
-        if (playerLevel >= 5 && playerLevel % 5 == 0) {
-            // BOSS BATTLE!
+        // Logic Boss: Level kelipatan 5
+        if (level >= 5 && level % 5 == 0) {
             String[] bossNames = {"Dragon", "Phoenix", "Golem", "Wraith", "Demon Lord"};
-            int bossIndex = ((playerLevel / 5) - 1) % bossNames.length;
-            String bossName = bossNames[bossIndex];
+            String bossName = bossNames[(level / 5 - 1) % bossNames.length];
 
-            // Show boss warning
-            Alert bossAlert = new Alert(Alert.AlertType.INFORMATION);
-            bossAlert.setTitle("⚠️ BOSS BATTLE WARNING!");
-            bossAlert.setHeaderText("🔥 " + bossName + " (Level " + playerLevel + ") has appeared!");
-            bossAlert.setContentText("💀 Prepare for an epic battle!");
-            bossAlert.showAndWait();
-
-            // Create boss
-            Character boss = EnemyFactory.createBoss(bossName, playerLevel);
-            return List.of(boss);
+            // Tampilkan Peringatan Boss menggunakan MedievalPopup
+            MedievalPopup.showConfirm(rootStack, "⚠️ BOSS WARNING ⚠️",
+                    "A powerful " + bossName + " (Lv." + level + ") has appeared!\nAre you prepared?",
+                    () -> {
+                        startBattleLogic(player);
+                    }
+            );
         } else {
-            // Normal enemy - smart generation based on AI difficulty for level 1-10
-            if (playerLevel <= 10) {
-                com.elemental.model.AIDifficulty difficulty = com.elemental.model.GameSettings.getInstance().getAIDifficulty();
-
-                switch (difficulty) {
-                    case EASY:
-                        // Easy: Weak enemy (disadvantage element)
-                        return List.of(createWeakEnemy(playerLevel, playerElement));
-
-                    case MEDIUM:
-                        // Medium: Balanced enemy (neutral element)
-                        return List.of(createBalancedEnemy(playerLevel, playerElement));
-
-                    case HARD:
-                        // Hard: Strong enemy (advantage element)
-                        return List.of(createStrongEnemy(playerLevel, playerElement));
-
-                    default:
-                        return List.of(EnemyFactory.createEnemy(playerLevel));
-                }
-            } else {
-                // Level 11+: Always random enemy
-                return List.of(EnemyFactory.createEnemy(playerLevel));
-            }
+            startBattleLogic(player);
         }
     }
 
-    /**
-     * Create weak enemy (element disadvantage) for beginner friendly gameplay
-     */
-    private Character createWeakEnemy(int level, com.elemental.model.Element playerElement) {
-        if (playerElement == null) {
-            return EnemyFactory.createEnemy(level);
-        }
-
-        // Get weak element (player has advantage)
-        com.elemental.model.Element weakElement;
-        switch (playerElement) {
-            case FIRE:
-                weakElement = com.elemental.model.Element.EARTH; // Fire beats Earth
-                break;
-            case WATER:
-                weakElement = com.elemental.model.Element.FIRE; // Water beats Fire
-                break;
-            case EARTH:
-                weakElement = com.elemental.model.Element.WATER; // Earth beats Water
-                break;
-            default:
-                weakElement = com.elemental.model.Element.FIRE;
-        }
-
-        // Create enemy with weak element
-        String[] weakEnemyNames = {"Goblin", "Skeleton", "Bandit"};
-        String name = weakEnemyNames[(int)(Math.random() * weakEnemyNames.length)];
-        com.elemental.model.CharacterClass randomClass = com.elemental.model.CharacterClass.values()[(int)(Math.random() * 3)];
-
-        return EnemyFactory.createEnemy(name, randomClass, weakElement, level);
+    private void startBattleLogic(Character player) {
+        List<Character> enemies = generateEnemyTeam(player.getLevel());
+        MainFX.battleService.startBattle(Collections.singletonList(player), enemies);
+        MainFX.primaryStage.getScene().setRoot(new BattleScene().getLayout());
     }
 
-    /**
-     * Create balanced enemy (neutral element) for fair gameplay
-     */
-    private Character createBalancedEnemy(int level, com.elemental.model.Element playerElement) {
-        if (playerElement == null) {
-            return EnemyFactory.createEnemy(level);
+    public StackPane getLayout() { return rootStack; }
+
+    private List<Character> generateEnemyTeam(int playerLevel) {
+        if (playerLevel >= 5 && playerLevel % 5 == 0) {
+            String[] bossNames = {"Dragon", "Phoenix", "Golem", "Wraith", "Demon Lord"};
+            String bossName = bossNames[(playerLevel / 5 - 1) % bossNames.length];
+            return List.of(EnemyFactory.createBoss(bossName, playerLevel));
+        } else {
+            return List.of(EnemyFactory.createEnemy(playerLevel));
         }
-
-        // Use same element as player (neutral matchup: 1.0x damage both ways)
-        String[] balancedEnemyNames = {"Orc", "Troll", "Warrior"};
-        String name = balancedEnemyNames[(int)(Math.random() * balancedEnemyNames.length)];
-        com.elemental.model.CharacterClass randomClass = com.elemental.model.CharacterClass.values()[(int)(Math.random() * 3)];
-
-        return EnemyFactory.createEnemy(name, randomClass, playerElement, level);
-    }
-
-    /**
-     * Create strong enemy (element advantage) for challenging gameplay
-     */
-    private Character createStrongEnemy(int level, com.elemental.model.Element playerElement) {
-        if (playerElement == null) {
-            return EnemyFactory.createEnemy(level);
-        }
-
-        // Get strong element (enemy has advantage)
-        com.elemental.model.Element strongElement;
-        switch (playerElement) {
-            case FIRE:
-                strongElement = com.elemental.model.Element.WATER; // Water beats Fire
-                break;
-            case WATER:
-                strongElement = com.elemental.model.Element.EARTH; // Earth beats Water
-                break;
-            case EARTH:
-                strongElement = com.elemental.model.Element.FIRE; // Fire beats Earth
-                break;
-            default:
-                strongElement = com.elemental.model.Element.WATER;
-        }
-
-        // Create enemy with strong element
-        String[] strongEnemyNames = {"Elite Guard", "Warlock", "Champion"};
-        String name = strongEnemyNames[(int)(Math.random() * strongEnemyNames.length)];
-        com.elemental.model.CharacterClass randomClass = com.elemental.model.CharacterClass.values()[(int)(Math.random() * 3)];
-
-        return EnemyFactory.createEnemy(name, randomClass, strongElement, level);
     }
 }

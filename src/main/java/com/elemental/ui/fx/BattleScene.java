@@ -1,43 +1,29 @@
 package com.elemental.ui.fx;
 
-import java.util.Map;
-
 import com.elemental.MainFX;
+import com.elemental.factory.EnemyFactory;
 import com.elemental.factory.ItemFactory;
-import com.elemental.model.ActionType;
-import com.elemental.model.Battle;
-import com.elemental.model.BattleAction;
-import com.elemental.model.BattleStatus;
+import com.elemental.model.*;
 import com.elemental.model.Character;
-import com.elemental.model.GameSettings;
-import com.elemental.model.Inventory;
-import com.elemental.model.Item;
-import com.elemental.model.Skill;
+import com.elemental.strategy.AIStrategy;
+import com.elemental.strategy.AIStrategyFactory;
 
 import javafx.animation.PauseTransition;
 import javafx.animation.ScaleTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.Separator;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.Tooltip;
-import javafx.scene.effect.DropShadow;
+import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class BattleScene {
     // Layout Components
@@ -66,18 +52,18 @@ public class BattleScene {
     private boolean isPaused = false;
 
     public BattleScene() {
-        // 1. Root Stack (Untuk menumpuk Game + Overlay Menu + Popup)
+        // 1. Root Stack
         rootStack = new StackPane();
         rootStack.getStyleClass().add("root");
 
         layout = new BorderPane();
 
-        // Layer untuk efek floating text (damage numbers)
+        // Layer untuk floating text
         overlayPane = new Pane();
         overlayPane.setPickOnBounds(false);
 
         // =========================================
-        // 2. TOP SECTION (ENEMY HUD + PAUSE BTN)
+        // 2. TOP SECTION (ENEMY HUD + PAUSE)
         // =========================================
         topBar = new BorderPane();
         topBar.setPadding(new Insets(15));
@@ -89,7 +75,7 @@ public class BattleScene {
         topHudCenter.getStyleClass().add("panel-background");
         topHudCenter.setPadding(new Insets(10, 40, 10, 40));
         topHudCenter.setMaxWidth(500);
-        topHudCenter.setEffect(new DropShadow(10, Color.BLACK)); // Efek bayangan
+        topHudCenter.setEffect(new DropShadow(10, Color.BLACK));
 
         enemyNameLbl = new Label("Enemy Name");
         enemyNameLbl.setStyle("-fx-font-family: 'Times New Roman'; -fx-font-size: 20px; -fx-font-weight: bold;");
@@ -114,13 +100,13 @@ public class BattleScene {
         layout.setTop(topBar);
 
         // =========================================
-        // 3. CENTER SECTION (ARENA PERTARUNGAN)
+        // 3. CENTER SECTION (ARENA)
         // =========================================
         arenaContainer = new HBox();
         arenaContainer.setAlignment(Pos.CENTER);
-        arenaContainer.setSpacing(150); // Jarak antar karakter
+        arenaContainer.setSpacing(150);
 
-        // Styling Arena (Background + Border Kayu)
+        // Background Image + Border Kayu
         arenaContainer.setStyle(
                 "-fx-background-image: url('/assets/battle_bg.jpg');" +
                         "-fx-background-size: cover;" +
@@ -194,7 +180,7 @@ public class BattleScene {
         double btnH = 45;
 
         Button btnAttack = createActionButton("ATTACK", btnW, btnH);
-        btnAttack.setStyle("-fx-base: #8b0000;"); // Merah tua
+        btnAttack.setStyle("-fx-base: #8b0000;");
         btnAttack.setOnAction(e -> executePlayerAction(ActionType.ATTACK, null, null));
 
         Button btnSkill = createActionButton("SKILL", btnW, btnH);
@@ -204,7 +190,7 @@ public class BattleScene {
         btnItem.setOnAction(e -> showItemSelection());
 
         Button btnDefend = createActionButton("DEFEND", btnW, btnH);
-        btnDefend.setStyle("-fx-base: #2f4f4f;"); // Abu-abu biru
+        btnDefend.setStyle("-fx-base: #2f4f4f;");
         btnDefend.setOnAction(e -> executePlayerAction(ActionType.DEFEND, null, null));
 
         actionMenu.getChildren().addAll(btnAttack, btnSkill, btnItem, btnDefend);
@@ -223,13 +209,11 @@ public class BattleScene {
 
         layout.setBottom(bottomHud);
 
-        // Gabungkan Layer: Layout Utama -> Overlay Efek (Damage)
         rootStack.getChildren().addAll(layout, overlayPane);
 
         initialUpdate();
     }
 
-    // Helper untuk membuat tombol seragam
     private Button createActionButton(String text, double w, double h) {
         Button btn = new Button(text);
         btn.getStyleClass().add("button-medieval");
@@ -237,14 +221,12 @@ public class BattleScene {
         return btn;
     }
 
-    // Penting: Mengembalikan rootStack (agar overlay bisa menumpuk di atasnya)
     public StackPane getLayout() { return rootStack; }
 
     // =========================================
-    // UI LOGIC: MENU & POPUPS
+    // UI LOGIC: MENU OVERLAYS
     // =========================================
 
-    // Menu Pause Utama
     private void showPauseMenu() {
         isPaused = true;
 
@@ -268,11 +250,9 @@ public class BattleScene {
         });
 
         pauseContent.getChildren().addAll(btnResume, btnSettings, btnExit);
-
         showFancyOverlay("GAME PAUSED", pauseContent);
     }
 
-    // Menu Settings dalam Game
     private void showInGameSettingsMenu() {
         VBox settingsBox = new VBox(20);
         settingsBox.setAlignment(Pos.CENTER);
@@ -292,7 +272,6 @@ public class BattleScene {
         showFancyOverlay("SETTINGS", settingsBox);
     }
 
-    // Overlay Premium (Background Gelap + Panel Elegan)
     private void showFancyOverlay(String title, Node content) {
         StackPane overlayBg = new StackPane();
         overlayBg.setStyle("-fx-background-color: rgba(0, 0, 0, 0.85);");
@@ -302,7 +281,6 @@ public class BattleScene {
         menuBox.setMaxSize(400, 400);
         menuBox.setPadding(new Insets(30));
 
-        // Styling Inline
         menuBox.setStyle(
                 "-fx-background-color: linear-gradient(to bottom, #2b1b17, #1a1a1a);" +
                         "-fx-border-color: #ffd700;" +
@@ -334,7 +312,6 @@ public class BattleScene {
         overlayBg.getChildren().add(menuBox);
         rootStack.getChildren().add(overlayBg);
 
-        // Animasi Pop-up
         ScaleTransition st = new ScaleTransition(Duration.millis(200), menuBox);
         st.setFromX(0.5); st.setFromY(0.5);
         st.setToX(1.0); st.setToY(1.0);
@@ -342,17 +319,15 @@ public class BattleScene {
     }
 
     private void closeOverlay() {
-        // Menutup layer paling atas (overlay terakhir)
         if (rootStack.getChildren().size() > 2) {
             rootStack.getChildren().remove(rootStack.getChildren().size() - 1);
         }
-        // Jika tidak ada overlay lagi, unpause game
         if (rootStack.getChildren().size() <= 2) {
             isPaused = false;
         }
     }
 
-    // --- Overlay Sederhana untuk Skill/Item ---
+    // --- Overlay Sederhana (Skill/Item) ---
     private void showOverlayMenu(String title, Node content) {
         StackPane overlayBg = new StackPane();
         overlayBg.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7);");
@@ -503,21 +478,17 @@ public class BattleScene {
         }
 
         if (battle.getBattleStatus() != BattleStatus.ONGOING) {
-            // Use Platform.runLater to avoid showAndWait during animation
             javafx.application.Platform.runLater(() -> handleBattleEnd(battle.getBattleStatus()));
         }
     }
 
     private void updateBars(Character p, Character e) {
-        // Show boss indicator
-        String bossIndicator = e.isBoss() ? " 👑 BOSS" : "";
+        // Logika sederhana untuk indikator Boss
+        boolean isBoss = e.getLevel() >= 5 && e.getLevel() % 5 == 0;
+        String bossIndicator = isBoss ? " 👑 BOSS" : "";
+
         enemyNameLbl.setText(String.format("%s (Lv.%d)%s", e.getName(), e.getLevel(), bossIndicator));
         playerNameLbl.setText(String.format("%s (Lv.%d) - %s", p.getName(), p.getLevel(), p.getStatus()));
-
-        // Update progress bar values to reflect current state
-        playerHP.setProgress((double) p.getCurrentHP() / p.getMaxHP());
-        playerMP.setProgress((double) p.getCurrentMP() / p.getMaxMP());
-        enemyHP.setProgress((double) e.getCurrentHP() / e.getMaxHP());
     }
 
     private void executePlayerAction(ActionType type, Skill skill, Item item) {
@@ -558,7 +529,7 @@ public class BattleScene {
             if (battle.getBattleStatus() != BattleStatus.ONGOING) return;
             int pHpBefore = player.getCurrentHP();
 
-            com.elemental.strategy.AIStrategy ai = com.elemental.strategy.AIStrategyFactory.create(GameSettings.getInstance().getAIDifficulty());
+            AIStrategy ai = AIStrategyFactory.create(GameSettings.getInstance().getAIDifficulty());
             BattleAction enemyAction = ai.decideAction(enemy, battle.getEnemyTeam(), battle.getPlayerTeam());
             battle.executeAction(enemyAction);
 
@@ -573,200 +544,51 @@ public class BattleScene {
 
     // MENGGUNAKAN MEDIEVAL POPUP UNTUK HASIL BATTLE
     private void handleBattleEnd(BattleStatus status) {
-        actionMenu.setDisable(true);
+        actionMenu.setDisable(true); // Kunci tombol
 
-        Battle battle = MainFX.battleService.getCurrentBattle();
-        if (battle == null) {
-            // Safety check
-            MainFX.primaryStage.setScene(new MainMenuScene().getScene());
-            return;
-        }
-
-        // Auto-save if enabled
-        if (com.elemental.model.GameSettings.getInstance().isAutoSave()) {
+        // Auto Save
+        if (MainFX.saveLoadService != null) {
             MainFX.saveLoadService.autoSave();
-            battleLog.appendText("\n💾 Game auto-saved!\n");
         }
 
         if (status == BattleStatus.VICTORY) {
-            // Victory: Show continue or exit dialog
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("⚔️ VICTORY!");
-            alert.setHeaderText("🎉 You won the battle!");
+            // Menang: Tanya mau lanjut atau keluar?
+            MedievalPopup.showConfirm(rootStack, "VICTORY!",
+                    "Enemy defeated!\nYou gained experience and loot.\n\nContinue to next battle?",
+                    () -> { // YES -> Lanjut Battle
+                        try {
+                            Character player = MainFX.battleService.getCurrentBattle().getPlayerTeam().get(0);
+                            List<Character> enemies = generateEnemyTeam(player.getLevel());
+                            MainFX.battleService.startBattle(Collections.singletonList(player), enemies);
 
-            // Get current player safely
-            if (battle.getPlayerTeam().isEmpty()) {
-                MainFX.primaryStage.setScene(new MainMenuScene().getScene());
-                return;
-            }
-            Character player = battle.getPlayerTeam().get(0);
-
-            // Create buttons
-            ButtonType btnContinue = new ButtonType("⚔️ Lanjut Battle");
-            ButtonType btnExit = new ButtonType("🏠 Keluar ke Menu");
-
-            alert.getButtonTypes().setAll(btnContinue, btnExit);
-
-            alert.showAndWait().ifPresent(response -> {
-                if (response == btnContinue) {
-                    try {
-                        // Continue battle - start new battle with same character
-                        battleLog.appendText("\n⚔️ Preparing next battle...\n");
-
-                        // Generate new enemies
-                        List<com.elemental.model.Character> enemies = generateEnemyTeam(player.getLevel());
-                        MainFX.battleService.startBattle(Collections.singletonList(player), enemies);
-
-                        // Reload battle scene
-                        MainFX.primaryStage.getScene().setRoot(new BattleScene().getLayout());
-                    } catch (Exception e) {
-                        // If error, go back to menu
-                        System.err.println("Error starting next battle: " + e.getMessage());
+                            // Refresh Scene
+                            MainFX.primaryStage.getScene().setRoot(new BattleScene().getLayout());
+                        } catch (Exception e) {
+                            MainFX.primaryStage.setScene(new MainMenuScene().getScene());
+                        }
+                    },
+                    () -> { // NO -> Balik ke Menu
                         MainFX.primaryStage.setScene(new MainMenuScene().getScene());
                     }
-                } else {
-                    // Exit to menu
-                    MainFX.primaryStage.setScene(new MainMenuScene().getScene());
-                }
-            });
+            );
         } else {
-            // Defeat: Direct exit to menu
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("💀 DEFEAT");
-            alert.setHeaderText("You were defeated...");
-            alert.setContentText("Returning to main menu.");
-            alert.showAndWait();
-            MainFX.primaryStage.setScene(new MainMenuScene().getScene());
+            // Kalah: Hanya bisa keluar
+            MedievalPopup.show(rootStack, "DEFEAT...",
+                    "You have fallen in battle...\nBetter luck next time.",
+                    MedievalPopup.Type.DEFEAT,
+                    () -> MainFX.primaryStage.setScene(new MainMenuScene().getScene())
+            );
         }
     }
 
-    /**
-     * Generate enemy team with boss system and smart difficulty
-     */
-    private List<com.elemental.model.Character> generateEnemyTeam(int playerLevel) {
-        // Get player element from current battle or character service
-        com.elemental.model.Element playerElement = null;
-        Battle currentBattle = MainFX.battleService.getCurrentBattle();
-        if (currentBattle != null && !currentBattle.getPlayerTeam().isEmpty()) {
-            playerElement = currentBattle.getPlayerTeam().get(0).getElement();
-        }
-
+    private List<Character> generateEnemyTeam(int playerLevel) {
+        // Logic generate enemy (Boss setiap kelipatan 5)
         if (playerLevel >= 5 && playerLevel % 5 == 0) {
-            // Boss battle
             String[] bossNames = {"Dragon", "Phoenix", "Golem", "Wraith", "Demon Lord"};
-            int bossIndex = ((playerLevel / 5) - 1) % bossNames.length;
-            String bossName = bossNames[bossIndex];
-
-            com.elemental.model.Character boss = com.elemental.factory.EnemyFactory.createBoss(bossName, playerLevel);
-            return List.of(boss);
+            String bossName = bossNames[(playerLevel / 5 - 1) % bossNames.length];
+            return List.of(EnemyFactory.createBoss(bossName, playerLevel));
         } else {
-            // Normal enemy - smart generation based on AI difficulty for level 1-10
-            if (playerLevel <= 10) {
-                com.elemental.model.AIDifficulty difficulty = com.elemental.model.GameSettings.getInstance().getAIDifficulty();
-
-                switch (difficulty) {
-                    case EASY:
-                        // Easy: Weak enemy (disadvantage element) - Learn element system
-                        return List.of(createWeakEnemy(playerLevel, playerElement));
-
-                    case MEDIUM:
-                        // Medium: Balanced enemy (neutral or same element) - Fair fight
-                        return List.of(createBalancedEnemy(playerLevel, playerElement));
-
-                    case HARD:
-                        // Hard: Strong enemy (advantage element) - Challenge
-                        return List.of(createStrongEnemy(playerLevel, playerElement));
-
-                    default:
-                        return List.of(com.elemental.factory.EnemyFactory.createEnemy(playerLevel));
-                }
-            } else {
-                // Level 11+: Always random enemy (normal difficulty)
-                return List.of(com.elemental.factory.EnemyFactory.createEnemy(playerLevel));
-            }
+            return List.of(EnemyFactory.createEnemy(playerLevel));
         }
-    }
-
-    /**
-     * Create weak enemy (element disadvantage) for beginner friendly gameplay
-     * Player has advantage: 1.5x damage to enemy, enemy deals 0.7x damage
-     */
-    private com.elemental.model.Character createWeakEnemy(int level, com.elemental.model.Element playerElement) {
-        if (playerElement == null) {
-            return com.elemental.factory.EnemyFactory.createEnemy(level);
-        }
-
-        // Get weak element (player has advantage)
-        com.elemental.model.Element weakElement;
-        switch (playerElement) {
-            case FIRE:
-                weakElement = com.elemental.model.Element.EARTH; // Fire beats Earth
-                break;
-            case WATER:
-                weakElement = com.elemental.model.Element.FIRE; // Water beats Fire
-                break;
-            case EARTH:
-                weakElement = com.elemental.model.Element.WATER; // Earth beats Water
-                break;
-            default:
-                weakElement = com.elemental.model.Element.FIRE;
-        }
-
-        // Create enemy with weak element
-        String[] weakEnemyNames = {"Goblin", "Skeleton", "Bandit"};
-        String name = weakEnemyNames[(int)(Math.random() * weakEnemyNames.length)];
-        com.elemental.model.CharacterClass randomClass = com.elemental.model.CharacterClass.values()[(int)(Math.random() * 3)];
-
-        return com.elemental.factory.EnemyFactory.createEnemy(name, randomClass, weakElement, level);
-    }
-
-    /**
-     * Create balanced enemy (neutral element) for fair gameplay
-     * Both deal normal damage: 1.0x (no advantage/disadvantage)
-     */
-    private com.elemental.model.Character createBalancedEnemy(int level, com.elemental.model.Element playerElement) {
-        if (playerElement == null) {
-            return com.elemental.factory.EnemyFactory.createEnemy(level);
-        }
-
-        // Use same element as player (neutral matchup: 1.0x damage both ways)
-        String[] balancedEnemyNames = {"Orc", "Troll", "Warrior"};
-        String name = balancedEnemyNames[(int)(Math.random() * balancedEnemyNames.length)];
-        com.elemental.model.CharacterClass randomClass = com.elemental.model.CharacterClass.values()[(int)(Math.random() * 3)];
-
-        return com.elemental.factory.EnemyFactory.createEnemy(name, randomClass, playerElement, level);
-    }
-
-    /**
-     * Create strong enemy (element advantage) for challenging gameplay
-     * Enemy has advantage: 1.5x damage to player, player deals 0.7x damage
-     */
-    private com.elemental.model.Character createStrongEnemy(int level, com.elemental.model.Element playerElement) {
-        if (playerElement == null) {
-            return com.elemental.factory.EnemyFactory.createEnemy(level);
-        }
-
-        // Get strong element (enemy has advantage)
-        com.elemental.model.Element strongElement;
-        switch (playerElement) {
-            case FIRE:
-                strongElement = com.elemental.model.Element.WATER; // Water beats Fire
-                break;
-            case WATER:
-                strongElement = com.elemental.model.Element.EARTH; // Earth beats Water
-                break;
-            case EARTH:
-                strongElement = com.elemental.model.Element.FIRE; // Fire beats Earth
-                break;
-            default:
-                strongElement = com.elemental.model.Element.WATER;
-        }
-
-        // Create enemy with strong element
-        String[] strongEnemyNames = {"Elite Guard", "Warlock", "Champion"};
-        String name = strongEnemyNames[(int)(Math.random() * strongEnemyNames.length)];
-        com.elemental.model.CharacterClass randomClass = com.elemental.model.CharacterClass.values()[(int)(Math.random() * 3)];
-
-        return com.elemental.factory.EnemyFactory.createEnemy(name, randomClass, strongElement, level);
     }
 }
