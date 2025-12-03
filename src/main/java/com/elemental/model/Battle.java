@@ -188,8 +188,10 @@ public class Battle {
                 target.takeDamage(damage);
                 battleLog.logDamage(user, target, damage, isCritical);
 
+                // Use skill element if available, otherwise use user element
+                Element attackElement = skill.getElement() != null ? skill.getElement() : user.getElement();
                 String elementAdvantage = DamageCalculator.getElementAdvantage(
-                        user.getElement(), target.getElement());
+                        attackElement, target.getElement());
                 if (!elementAdvantage.isEmpty()) {
                     battleLog.logElementAdvantage(elementAdvantage);
                 }
@@ -399,15 +401,31 @@ public class Battle {
     /**
      * FR-BATTLE-005: Calculate and give rewards
      * Experience: 50 × Enemy Level per enemy
+     * Boss Bonus: 3× EXP for boss enemies
      * Item Drops: Probability-based
      */
     private void giveRewards() {
         int totalExp = 0;
+        boolean defeatedBoss = false;
+
         for (Character enemy : enemyTeam) {
-            totalExp += 50 * enemy.getLevel();
+            int enemyExp = 50 * enemy.getLevel();
+
+            // Boss gives 3x EXP
+            if (enemy.isBoss()) {
+                enemyExp *= 3;
+                defeatedBoss = true;
+            }
+
+            totalExp += enemyExp;
         }
 
         battleLog.log("=== REWARDS ===");
+
+        // Show boss victory message
+        if (defeatedBoss) {
+            battleLog.log("🎉 BOSS DEFEATED! BONUS REWARDS! 🎉");
+        }
 
         // Give experience
         for (Character player : playerTeam) {

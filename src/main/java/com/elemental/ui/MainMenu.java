@@ -23,7 +23,7 @@ public class MainMenu {
         this.battleService = new BattleService();
         this.saveLoadService = new SaveLoadService(characterService);
 
-        this.characterManagement = new CharacterManagement(characterService, scanner);
+        this.characterManagement = new CharacterManagement(characterService, saveLoadService, scanner);
         this.battleScreen = new BattleScreen(battleService, characterService, saveLoadService, scanner);
     }
 
@@ -225,7 +225,8 @@ public class MainMenu {
             System.out.println("1. Change AI Difficulty");
             System.out.println("2. Toggle Detailed Battle Log");
             System.out.println("3. Toggle Auto Progress");
-            System.out.println("4. Reset to Defaults");
+            System.out.println("4. Toggle Auto Save");
+            System.out.println("5. Reset to Defaults");
             System.out.println("0. Back to Main Menu");
             System.out.println("───────────────────────────────────────────────");
             System.out.print("Enter your choice: ");
@@ -243,6 +244,9 @@ public class MainMenu {
                     toggleAutoProgress();
                     break;
                 case "4":
+                    toggleAutoSave();
+                    break;
+                case "5":
                     resetSettings();
                     break;
                 case "0":
@@ -357,6 +361,31 @@ public class MainMenu {
     }
 
     /**
+     * Toggle auto save
+     */
+    private void toggleAutoSave() {
+        GameSettings settings = GameSettings.getInstance();
+        settings.setAutoSave(!settings.isAutoSave());
+
+        String status = settings.isAutoSave() ? "ON" : "OFF";
+        System.out.println("\n✅ Auto Save: " + status);
+
+        if (settings.isAutoSave()) {
+            System.out.println("💾 Game will automatically save after:");
+            System.out.println("   • Creating a character");
+            System.out.println("   • Completing a battle");
+            System.out.println("   • Leveling up");
+            System.out.println("   • Important game events");
+        } else {
+            System.out.println("💡 You need to manually save from Save/Load menu");
+            System.out.println("⚠️  Don't forget to save your progress!");
+        }
+
+        System.out.println("\nPress Enter to continue...");
+        scanner.nextLine();
+    }
+
+    /**
      * Reset all settings to defaults
      */
     private void resetSettings() {
@@ -369,6 +398,7 @@ public class MainMenu {
             System.out.println("  • AI Difficulty: MEDIUM");
             System.out.println("  • Detailed Log: ON");
             System.out.println("  • Auto Progress: OFF");
+            System.out.println("  • Auto Save: ON");
         } else {
             System.out.println("Cancelled.");
         }

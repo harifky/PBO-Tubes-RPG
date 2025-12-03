@@ -13,6 +13,7 @@ public class GameSettings {
     private AIDifficulty aiDifficulty;
     private boolean showDetailedLog;
     private boolean autoProgress; // Auto press enter after action
+    private boolean autoSave; // Auto save after certain events
 
     // Private constructor for singleton
     private GameSettings() {
@@ -20,6 +21,7 @@ public class GameSettings {
         this.aiDifficulty = AIDifficulty.MEDIUM;
         this.showDetailedLog = true;
         this.autoProgress = false;
+        this.autoSave = true; // Auto save enabled by default
     }
 
     /**
@@ -45,6 +47,10 @@ public class GameSettings {
         return autoProgress;
     }
 
+    public boolean isAutoSave() {
+        return autoSave;
+    }
+
     // Setters
     public void setAIDifficulty(AIDifficulty aiDifficulty) {
         this.aiDifficulty = aiDifficulty;
@@ -58,6 +64,10 @@ public class GameSettings {
         this.autoProgress = autoProgress;
     }
 
+    public void setAutoSave(boolean autoSave) {
+        this.autoSave = autoSave;
+    }
+
     /**
      * Reset to default settings
      */
@@ -65,6 +75,7 @@ public class GameSettings {
         this.aiDifficulty = AIDifficulty.MEDIUM;
         this.showDetailedLog = true;
         this.autoProgress = false;
+        this.autoSave = true;
     }
 
     /**
@@ -77,6 +88,7 @@ public class GameSettings {
         sb.append("╚══════════════════════════════════════════════╝\n");
         sb.append("\n");
         sb.append("AI Difficulty:    ").append(aiDifficulty).append("\n");
+        sb.append("Auto Save:        ").append(autoSave ? "✓ Enabled" : "✗ Disabled").append("\n");
         sb.append("Detailed Log:     ").append(showDetailedLog ? "ON" : "OFF").append("\n");
         sb.append("Auto Progress:    ").append(autoProgress ? "ON" : "OFF").append("\n");
         return sb.toString();
