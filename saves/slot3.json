@@ -1,6 +1,6 @@
 {
-  "saveId": "21d14dd4-027a-41fa-b892-a296e6416109",
-  "savedAt": "2025-12-03T13:59:52.8530697",
+  "saveId": "d65f74a5-5130-4bac-97e7-c761903ae29c",
+  "savedAt": "2025-12-03T16:26:24.2298335",
   "saveVersion": 1,
   "characters": [
     {
@@ -53,7 +53,7 @@
       "characterClass": "MAGE",
       "element": "WATER",
       "level": 2,
-      "experience": 0,
+      "experience": -100,
       "currentHP": 0,
       "maxHP": 90,
       "currentMP": 105,
@@ -61,6 +61,36 @@
       "attack": 38,
       "defense": 12,
       "speed": 26,
+      "status": "DEAD"
+    },
+    {
+      "name": "czczc",
+      "characterClass": "MAGE",
+      "element": "FIRE",
+      "level": 1,
+      "experience": 0,
+      "currentHP": 0,
+      "maxHP": 80,
+      "currentMP": 65,
+      "maxMP": 100,
+      "attack": 35,
+      "defense": 10,
+      "speed": 25,
+      "status": "DEAD"
+    },
+    {
+      "name": "revan",
+      "characterClass": "MAGE",
+      "element": "FIRE",
+      "level": 1,
+      "experience": 50,
+      "currentHP": 0,
+      "maxHP": 80,
+      "currentMP": 30,
+      "maxMP": 100,
+      "attack": 35,
+      "defense": 10,
+      "speed": 25,
       "status": "DEAD"
     }
   ],
@@ -76,9 +106,12 @@
   },
   "metadata": {
     "slotName": "Save Slot 3",
-    "savedAt": "2025-12-03T13:59:52.8530697",
+    "savedAt": "2025-12-03T16:26:24.2298335",
     "totalBattles": 0,
     "highestLevel": 2,
     "highestLevelCharName": "ad"
+  },
+  "globalInventory": {
+    "Defense Boost": 1
   }
 }

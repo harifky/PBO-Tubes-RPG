@@ -3,6 +3,7 @@ package com.elemental.ui.fx;
 import com.elemental.MainFX;
 import com.elemental.factory.EnemyFactory;
 import com.elemental.model.Character;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -21,13 +22,26 @@ public class BattleSetupScene {
         rootStack = new StackPane();
         rootStack.getStyleClass().add("root");
 
+        // Main Container
         content = new VBox(20);
         content.setAlignment(Pos.CENTER);
 
+        // --- Inner Panel (Dark Style) ---
+        VBox setupPanel = new VBox(25);
+        setupPanel.getStyleClass().add("dark-fantasy-panel");
+        setupPanel.setMaxWidth(500);
+        setupPanel.setPadding(new Insets(40));
+        setupPanel.setAlignment(Pos.CENTER);
+
         Label title = new Label("Prepare for Battle");
         title.getStyleClass().add("game-title");
+        // Perkecil sedikit font title agar muat di panel
+        title.setStyle("-fx-font-size: 36px; -fx-effect: dropshadow(gaussian, #ff4500, 10, 0.4, 0, 0);");
 
         ComboBox<Character> charSelect = new ComboBox<>();
+        charSelect.setPrefWidth(300);
+        charSelect.setStyle("-fx-font-size: 14px;");
+
         List<Character> allChars = MainFX.characterService.getAllCharacters();
         allChars.sort((c1, c2) -> {
             boolean alive1 = c1.isAlive();
@@ -55,6 +69,10 @@ public class BattleSetupScene {
 
         Button btnStart = new Button("FIGHT!");
         btnStart.getStyleClass().add("button-medieval");
+        btnStart.setPrefWidth(300);
+        btnStart.setPrefHeight(60);
+        btnStart.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #ffd700;"); // Gold text
+
         btnStart.setOnAction(e -> {
             Character selected = charSelect.getValue();
             if (selected == null) {
@@ -68,12 +86,14 @@ public class BattleSetupScene {
             checkAndStartBattle(selected);
         });
 
-        // --- BACK BUTTON (UPDATED) ---
         Button btnBack = new Button("Retreat");
         btnBack.getStyleClass().add("button-medieval");
+        btnBack.setPrefWidth(300);
         btnBack.setOnAction(e -> MainFX.showMainMenu());
 
-        content.getChildren().addAll(title, charSelect, btnStart, btnBack);
+        setupPanel.getChildren().addAll(title, charSelect, btnStart, btnBack);
+        content.getChildren().add(setupPanel);
+
         rootStack.getChildren().add(content);
     }
 

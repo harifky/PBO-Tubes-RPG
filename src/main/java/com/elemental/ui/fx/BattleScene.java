@@ -8,19 +8,21 @@ import com.elemental.model.Character;
 import com.elemental.strategy.AIStrategy;
 import com.elemental.strategy.AIStrategyFactory;
 
+import javafx.animation.Interpolator;
 import javafx.animation.PauseTransition;
 import javafx.animation.ScaleTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.CacheHint;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
+import javafx.scene.transform.Scale;
 import javafx.util.Duration;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -52,42 +54,64 @@ public class BattleScene {
     private boolean isPaused = false;
 
     public BattleScene() {
-        // 1. Root Stack
+        // 1. Root Stack (Background Hitam Pekat)
         rootStack = new StackPane();
         rootStack.getStyleClass().add("root");
+        rootStack.setStyle("-fx-background-color: #0a0908;");
 
+        // --- SETUP LAYOUT UTAMA (FIXED 800x600) ---
         layout = new BorderPane();
+        layout.setMaxSize(800, 600);
+        layout.setPrefSize(800, 600);
+        layout.setStyle("-fx-effect: dropshadow(three-pass-box, black, 80, 0.5, 0, 0);");
 
-        // Layer untuk floating text
         overlayPane = new Pane();
         overlayPane.setPickOnBounds(false);
+        overlayPane.setMaxSize(800, 600);
+        overlayPane.setPrefSize(800, 600);
+
+        // --- SCALING & CENTERING LOGIC ---
+        StackPane gameContent = new StackPane(layout, overlayPane);
+        gameContent.setMaxSize(800, 600);
+        gameContent.setPrefSize(800, 600);
+        StackPane.setAlignment(gameContent, Pos.TOP_LEFT);
+
+        Scale scale = new Scale(1, 1);
+        gameContent.getTransforms().add(scale);
+
+        rootStack.widthProperty().addListener((obs, old, val) -> updateScale(gameContent, scale));
+        rootStack.heightProperty().addListener((obs, old, val) -> updateScale(gameContent, scale));
+
+        rootStack.getChildren().add(gameContent);
+
+        // =========================================
+        //        SETUP KOMPONEN UI
+        // =========================================
 
         // 2. TOP SECTION
         topBar = new BorderPane();
         topBar.setPadding(new Insets(15));
-        BorderPane.setMargin(topBar, new Insets(10));
 
         topHudCenter = new VBox(5);
         topHudCenter.setAlignment(Pos.CENTER);
         topHudCenter.getStyleClass().add("panel-background");
-        topHudCenter.setPadding(new Insets(10, 40, 10, 40));
-        topHudCenter.setMaxWidth(500);
-        topHudCenter.setEffect(new DropShadow(10, Color.BLACK));
+        topHudCenter.setPadding(new Insets(15, 50, 15, 50));
+        topHudCenter.setMaxWidth(550);
+        topHudCenter.setEffect(new DropShadow(15, Color.BLACK));
 
         enemyNameLbl = new Label("Enemy Name");
-        enemyNameLbl.setStyle("-fx-font-family: 'Times New Roman'; -fx-font-size: 20px; -fx-font-weight: bold;");
+        enemyNameLbl.setStyle("-fx-font-family: 'Times New Roman'; -fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #d4cdba;");
 
         enemyHP = new ProgressBar(1.0);
         enemyHP.getStyleClass().add("hp-bar");
-        enemyHP.setPrefWidth(400);
-        enemyHP.setStyle("-fx-accent: #ff3333;");
+        enemyHP.setPrefWidth(450);
 
         topHudCenter.getChildren().addAll(enemyNameLbl, enemyHP);
 
         Button btnPause = new Button("||");
         btnPause.getStyleClass().add("button-medieval");
-        btnPause.setPrefSize(45, 45);
-        btnPause.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 10;");
+        btnPause.setPrefSize(50, 50);
+        btnPause.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 2;");
         btnPause.setOnAction(e -> showPauseMenu());
 
         topBar.setCenter(topHudCenter);
@@ -98,44 +122,55 @@ public class BattleScene {
         // 3. CENTER SECTION (ARENA)
         arenaContainer = new HBox();
         arenaContainer.setAlignment(Pos.CENTER);
-        arenaContainer.setSpacing(150);
+        arenaContainer.setSpacing(180);
 
         arenaContainer.setStyle(
                 "-fx-background-image: url('/assets/battle_bg.jpg');" +
-                        "-fx-background-size: cover;" +
+                        "-fx-background-size: 100% 100%;" +
                         "-fx-background-position: center center;" +
-                        "-fx-border-color: #3e2723;" +
-                        "-fx-border-width: 8px;" +
-                        "-fx-border-radius: 0;" +
-                        "-fx-effect: innerShadow(gaussian, rgba(0,0,0,0.9), 40, 0.4, 0, 0);"
+                        "-fx-border-color: #2e2b26;" +
+                        "-fx-border-width: 4px;" +
+                        "-fx-effect: innerShadow(gaussian, rgba(0,0,0,0.8), 60, 0.4, 0, 0);"
         );
 
         enemySpriteBox = new VBox();
         enemySpriteBox.setAlignment(Pos.CENTER);
         enemySpriteBox.setId("enemyBox");
+        enemySpriteBox.setCache(true);
+        enemySpriteBox.setCacheHint(CacheHint.SPEED);
 
         playerSpriteBox = new VBox();
         playerSpriteBox.setAlignment(Pos.CENTER);
         playerSpriteBox.setId("playerBox");
+        playerSpriteBox.setCache(true);
+        playerSpriteBox.setCacheHint(CacheHint.SPEED);
 
         arenaContainer.getChildren().addAll(enemySpriteBox, playerSpriteBox);
         layout.setCenter(arenaContainer);
 
         // 4. RIGHT SECTION (LOG)
         VBox logContainer = new VBox();
-        logContainer.setPadding(new Insets(10));
+        logContainer.setPadding(new Insets(15));
         logContainer.getStyleClass().add("panel-background");
         BorderPane.setMargin(logContainer, new Insets(10, 10, 10, 0));
 
         Label logTitle = new Label("Battle Log");
-        logTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+        logTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #d4cdba;");
 
         battleLog = new TextArea();
         battleLog.setEditable(false);
-        battleLog.setPrefWidth(220);
-        battleLog.setPrefHeight(400);
+        battleLog.setPrefWidth(240);
+        battleLog.setPrefHeight(420);
         battleLog.setWrapText(true);
-        battleLog.setStyle("-fx-control-inner-background: #f4e4bc; -fx-font-family: 'Courier New'; -fx-font-size: 12px;");
+
+        // Style Battle Log: Background Gelap, Teks Terang
+        battleLog.setStyle(
+                "-fx-control-inner-background: #1a1816; " +
+                        "-fx-font-family: 'Courier New'; " +
+                        "-fx-font-size: 13px; " +
+                        "-fx-text-fill: #e8e1d5; " +
+                        "-fx-font-weight: bold;"
+        );
 
         logContainer.getChildren().addAll(logTitle, battleLog);
         layout.setRight(logContainer);
@@ -144,11 +179,11 @@ public class BattleScene {
         bottomHud = new VBox(10);
         bottomHud.setPadding(new Insets(20));
         bottomHud.getStyleClass().add("panel-background");
-        bottomHud.setEffect(new DropShadow(10, Color.BLACK));
+        bottomHud.setEffect(new DropShadow(15, Color.BLACK));
         BorderPane.setMargin(bottomHud, new Insets(0, 10, 10, 10));
 
         playerNameLbl = new Label("Player Name");
-        playerNameLbl.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
+        playerNameLbl.setStyle("-fx-font-weight: bold; -fx-font-size: 20px; -fx-text-fill: #d4cdba;");
 
         VBox barsBox = new VBox(8);
         playerHP = new ProgressBar(1.0);
@@ -161,25 +196,22 @@ public class BattleScene {
 
         barsBox.getChildren().addAll(new Label("HP"), playerHP, new Label("MP"), playerMP);
 
-        // Action Buttons
-        actionMenu = new HBox(20);
+        // --- ACTION BUTTONS ---
+        actionMenu = new HBox(15);
         actionMenu.setAlignment(Pos.CENTER_RIGHT);
 
-        double btnW = 110;
-        double btnH = 45;
-
-        Button btnAttack = createActionButton("ATTACK", btnW, btnH);
-        btnAttack.setStyle("-fx-base: #8b0000;");
+        Button btnAttack = createActionButton("ATTACK");
+        btnAttack.setStyle("-fx-base: #5e1b1b;");
         btnAttack.setOnAction(e -> executePlayerAction(ActionType.ATTACK, null, null));
 
-        Button btnSkill = createActionButton("SKILL", btnW, btnH);
+        Button btnSkill = createActionButton("SKILL");
         btnSkill.setOnAction(e -> showSkillSelection());
 
-        Button btnItem = createActionButton("ITEM", btnW, btnH);
+        Button btnItem = createActionButton("ITEM");
         btnItem.setOnAction(e -> showItemSelection());
 
-        Button btnDefend = createActionButton("DEFEND", btnW, btnH);
-        btnDefend.setStyle("-fx-base: #2f4f4f;");
+        Button btnDefend = createActionButton("DEFEND");
+        btnDefend.setStyle("-fx-base: #2e2b26;");
         btnDefend.setOnAction(e -> executePlayerAction(ActionType.DEFEND, null, null));
 
         actionMenu.getChildren().addAll(btnAttack, btnSkill, btnItem, btnDefend);
@@ -198,15 +230,46 @@ public class BattleScene {
 
         layout.setBottom(bottomHud);
 
-        rootStack.getChildren().addAll(layout, overlayPane);
-
         initialUpdate();
+    }
+
+    private void updateScale(StackPane content, Scale scale) {
+        double windowWidth = rootStack.getWidth();
+        double windowHeight = rootStack.getHeight();
+        double contentWidth = 800;
+        double contentHeight = 600;
+
+        if (windowWidth <= 0 || windowHeight <= 0) return;
+
+        double scaleX = windowWidth / contentWidth;
+        double scaleY = windowHeight / contentHeight;
+        double scaleFactor = Math.min(scaleX, scaleY);
+
+        scale.setPivotX(0);
+        scale.setPivotY(0);
+        scale.setX(scaleFactor);
+        scale.setY(scaleFactor);
+
+        double newX = (windowWidth - (contentWidth * scaleFactor)) / 2;
+        double newY = (windowHeight - (contentHeight * scaleFactor)) / 2;
+
+        content.setTranslateX(newX);
+        content.setTranslateY(newY);
+    }
+
+    private Button createActionButton(String text) {
+        Button btn = new Button(text);
+        btn.getStyleClass().add("button-medieval");
+        btn.setMinWidth(120);
+        btn.setPrefHeight(50);
+        return btn;
     }
 
     private Button createActionButton(String text, double w, double h) {
         Button btn = new Button(text);
         btn.getStyleClass().add("button-medieval");
-        btn.setPrefSize(w, h);
+        btn.setMinWidth(w);
+        btn.setPrefHeight(h);
         return btn;
     }
 
@@ -215,7 +278,6 @@ public class BattleScene {
     // --- PAUSE MENU ---
     private void showPauseMenu() {
         isPaused = true;
-
         VBox pauseContent = new VBox(15);
         pauseContent.setAlignment(Pos.CENTER);
 
@@ -226,11 +288,11 @@ public class BattleScene {
         btnSettings.setOnAction(e -> showInGameSettingsMenu());
 
         Button btnExit = createActionButton("EXIT TO MENU", 220, 50);
-        btnExit.setStyle("-fx-background-color: #8b0000; -fx-text-fill: white; -fx-border-color: #ffd700; -fx-border-width: 2;");
+        btnExit.getStyleClass().add("button-exit");
         btnExit.setOnAction(e -> {
             MedievalPopup.showConfirm(rootStack, "LEAVE BATTLE?",
                     "Are you sure you want to surrender?\nAll unsaved progress will be lost.",
-                    () -> MainFX.showMainMenu() // <--- GANTI JADI INI
+                    () -> MainFX.showMainMenu()
             );
         });
 
@@ -242,13 +304,15 @@ public class BattleScene {
         VBox settingsBox = new VBox(20);
         settingsBox.setAlignment(Pos.CENTER);
 
+        String cbStyle = "-fx-font-size: 16px; -fx-text-fill: #d4cdba; -fx-font-weight: bold;";
+
         CheckBox cbLog = new CheckBox("Detailed Battle Log");
-        cbLog.setStyle("-fx-font-size: 16px; -fx-text-fill: #3e1903; -fx-font-weight: bold;");
+        cbLog.setStyle(cbStyle);
         cbLog.setSelected(GameSettings.getInstance().isShowDetailedLog());
         cbLog.setOnAction(e -> GameSettings.getInstance().setShowDetailedLog(cbLog.isSelected()));
 
         CheckBox cbAuto = new CheckBox("Auto Progress");
-        cbAuto.setStyle("-fx-font-size: 16px; -fx-text-fill: #3e1903; -fx-font-weight: bold;");
+        cbAuto.setStyle(cbStyle);
         cbAuto.setSelected(GameSettings.getInstance().isAutoProgress());
         cbAuto.setOnAction(e -> GameSettings.getInstance().setAutoProgress(cbAuto.isSelected()));
 
@@ -265,21 +329,15 @@ public class BattleScene {
         menuBox.setMaxSize(400, 400);
         menuBox.setPadding(new Insets(30));
 
-        menuBox.setStyle(
-                "-fx-background-color: linear-gradient(to bottom, #2b1b17, #1a1a1a);" +
-                        "-fx-border-color: #ffd700;" +
-                        "-fx-border-width: 4;" +
-                        "-fx-border-radius: 15;" +
-                        "-fx-background-radius: 15;" +
-                        "-fx-effect: dropshadow(gaussian, black, 20, 0.5, 0, 0);"
-        );
+        menuBox.getStyleClass().add("panel-background");
+        menuBox.setStyle("-fx-border-width: 2px; -fx-border-color: #4a443b;");
 
         Label lblTitle = new Label(title);
         lblTitle.setStyle(
                 "-fx-font-family: 'Times New Roman';" +
                         "-fx-font-size: 32px;" +
                         "-fx-font-weight: bold;" +
-                        "-fx-text-fill: #ffd700;" +
+                        "-fx-text-fill: #d4cdba;" +
                         "-fx-effect: dropshadow(one-pass-box, black, 2, 2, 0, 0);"
         );
 
@@ -303,10 +361,10 @@ public class BattleScene {
     }
 
     private void closeOverlay() {
-        if (rootStack.getChildren().size() > 2) {
+        if (rootStack.getChildren().size() > 1) {
             rootStack.getChildren().remove(rootStack.getChildren().size() - 1);
         }
-        if (rootStack.getChildren().size() <= 2) {
+        if (rootStack.getChildren().size() <= 1) {
             isPaused = false;
         }
     }
@@ -323,7 +381,7 @@ public class BattleScene {
         menuBox.setMaxSize(400, 350);
 
         Label lblTitle = new Label(title);
-        lblTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-underline: true;");
+        lblTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-underline: true; -fx-text-fill: #d4cdba;");
 
         Button btnBack = new Button("Back");
         btnBack.getStyleClass().add("button-medieval");
@@ -344,11 +402,11 @@ public class BattleScene {
         for (Skill skill : player.getSkills()) {
             Button btn = new Button(String.format("%s (%d MP)", skill.getName(), skill.getMpCost()));
             btn.getStyleClass().add("button-medieval");
-            btn.setPrefWidth(250);
+            btn.setPrefWidth(300);
 
             if (!player.canUseSkill(skill)) {
                 btn.setDisable(true);
-                btn.setStyle("-fx-opacity: 0.6; -fx-text-fill: #555;");
+                btn.setStyle("-fx-opacity: 0.5; -fx-text-fill: #8f8576;");
             } else {
                 btn.setOnAction(e -> {
                     closeOverlay();
@@ -363,9 +421,7 @@ public class BattleScene {
     private void showItemSelection() {
         if (isPaused) return;
 
-        // UPDATE: Menggunakan Global Inventory
         Inventory inv = Inventory.getInstance();
-
         VBox itemList = new VBox(10);
         itemList.setAlignment(Pos.CENTER);
 
@@ -378,14 +434,13 @@ public class BattleScene {
                 String itemName = entry.getKey();
                 int qty = entry.getValue();
 
-                // Skip jika habis
                 if (qty <= 0) continue;
 
                 Item itemTemplate = ItemFactory.getItem(itemName);
 
                 Button btn = new Button(String.format("%s (x%d)", itemName, qty));
                 btn.getStyleClass().add("button-medieval");
-                btn.setPrefWidth(250);
+                btn.setPrefWidth(300);
 
                 Tooltip tooltip = new Tooltip(itemTemplate.getDescription());
                 btn.setTooltip(tooltip);
@@ -426,9 +481,10 @@ public class BattleScene {
     private void addBreathingEffect(Node node) {
         ScaleTransition st = new ScaleTransition(Duration.seconds(1.5), node);
         st.setFromX(1.0); st.setFromY(1.0);
-        st.setToX(1.02); st.setToY(1.02);
+        st.setToX(1.03); st.setToY(1.03);
         st.setCycleCount(ScaleTransition.INDEFINITE);
         st.setAutoReverse(true);
+        st.setInterpolator(Interpolator.EASE_BOTH);
         st.play();
     }
 
@@ -454,10 +510,10 @@ public class BattleScene {
             UIEffects.shakeNode(targetNode);
 
             double xPos = targetIsEnemy ?
-                    enemySpriteBox.localToScene(enemySpriteBox.getBoundsInLocal()).getMinX() + 50 :
-                    playerSpriteBox.localToScene(playerSpriteBox.getBoundsInLocal()).getMinX() + 50;
+                    enemySpriteBox.getBoundsInParent().getMinX() + 50 :
+                    playerSpriteBox.getBoundsInParent().getMinX() + 50;
 
-            double yPos = layout.getCenter().getBoundsInParent().getMinY() + 100;
+            double yPos = 300;
 
             String text = (isCritical ? "CRIT " : "") + damageDealt;
             String style = isCritical ? "crit-text" : "damage-text";
@@ -528,6 +584,7 @@ public class BattleScene {
         pause.play();
     }
 
+    // --- PERBAIKAN LOGIC: Handle Victory vs Defeat ---
     private void handleBattleEnd(BattleStatus status) {
         actionMenu.setDisable(true);
 
@@ -535,36 +592,32 @@ public class BattleScene {
             MainFX.saveLoadService.autoSave();
         }
 
-        String title;
-        String msg;
-        MedievalPopup.Type type;
-
         if (status == BattleStatus.VICTORY) {
-            title = "VICTORY!";
-            msg = "Enemy defeated!\nYou gained experience and loot.\nGame Auto-saved.";
-            type = MedievalPopup.Type.VICTORY;
-        } else {
-            title = "DEFEAT...";
-            msg = "You have fallen in battle...\nBetter luck next time.";
-            type = MedievalPopup.Type.DEFEAT;
-        }
-
-        MedievalPopup.showConfirm(rootStack, title,
-                msg + "\n\nContinue to next battle?",
-                () -> { // YES -> Continue
-                    try {
-                        Character player = MainFX.battleService.getCurrentBattle().getPlayerTeam().get(0);
-                        List<Character> enemies = generateEnemyTeam(player.getLevel());
-                        MainFX.battleService.startBattle(Collections.singletonList(player), enemies);
-                        MainFX.primaryStage.getScene().setRoot(new BattleScene().getLayout());
-                    } catch (Exception e) {
-                        MainFX.showMainMenu(); // <--- GANTI JADI INI
+            // MENANG: Tampilkan konfirmasi Lanjut
+            MedievalPopup.showConfirm(rootStack, "VICTORY!",
+                    "Enemy defeated!\nYou gained experience and loot.\nGame Auto-saved.\n\nContinue to next battle?",
+                    () -> { // YES: Continue Battle
+                        try {
+                            Character player = MainFX.battleService.getCurrentBattle().getPlayerTeam().get(0);
+                            List<Character> enemies = generateEnemyTeam(player.getLevel());
+                            MainFX.battleService.startBattle(Collections.singletonList(player), enemies);
+                            MainFX.primaryStage.getScene().setRoot(new BattleScene().getLayout());
+                        } catch (Exception e) {
+                            MainFX.showMainMenu();
+                        }
+                    },
+                    () -> { // NO: Main Menu
+                        MainFX.showMainMenu();
                     }
-                },
-                () -> { // NO -> Menu
-                    MainFX.showMainMenu(); // <--- GANTI JADI INI
-                }
-        );
+            );
+        } else {
+            // KALAH: Hanya tampilkan satu tombol "OK" ke Menu
+            MedievalPopup.show(rootStack, "DEFEAT...",
+                    "You have fallen in battle...\nBetter luck next time.",
+                    MedievalPopup.Type.DEFEAT,
+                    () -> MainFX.showMainMenu()
+            );
+        }
     }
 
     private List<Character> generateEnemyTeam(int playerLevel) {

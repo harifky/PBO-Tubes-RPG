@@ -24,17 +24,18 @@ public class SettingsScene {
         Label title = new Label("Game Settings");
         title.getStyleClass().add("game-title");
 
-        VBox settingsPanel = new VBox(15);
-        settingsPanel.getStyleClass().add("panel-background");
+        // Gunakan style dark-fantasy-panel
+        VBox settingsPanel = new VBox(20);
+        settingsPanel.getStyleClass().add("dark-fantasy-panel");
         settingsPanel.setMaxWidth(500);
-        settingsPanel.setPadding(new Insets(30));
+        settingsPanel.setPadding(new Insets(40));
         settingsPanel.setAlignment(Pos.CENTER);
 
         // AI DIFFICULTY
         Label lblDiff = new Label("AI Difficulty");
-        lblDiff.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+        lblDiff.setStyle("-fx-font-weight: bold; -fx-font-size: 18px; -fx-text-fill: #ffd700;");
 
-        HBox diffBox = new HBox(10);
+        HBox diffBox = new HBox(15);
         diffBox.setAlignment(Pos.CENTER);
 
         Button btnEasy = createToggleBtn("EASY", AIDifficulty.EASY);
@@ -59,27 +60,27 @@ public class SettingsScene {
         diffBox.getChildren().addAll(btnEasy, btnMed, btnHard);
 
         // OTHER SETTINGS
+        // Pastikan warna teks putih/terang agar terbaca di dark panel
+        String cbStyle = "-fx-font-size: 14px; -fx-text-fill: white; -fx-font-weight: bold;";
+
         CheckBox cbLog = new CheckBox("Show Detailed Battle Log");
         cbLog.setSelected(GameSettings.getInstance().isShowDetailedLog());
-        cbLog.setStyle("-fx-font-size: 14px;");
+        cbLog.setStyle(cbStyle);
         cbLog.setOnAction(e -> GameSettings.getInstance().setShowDetailedLog(cbLog.isSelected()));
 
         CheckBox cbAuto = new CheckBox("Auto Progress Battle");
         cbAuto.setSelected(GameSettings.getInstance().isAutoProgress());
-        cbAuto.setStyle("-fx-font-size: 14px;");
+        cbAuto.setStyle(cbStyle);
         cbAuto.setOnAction(e -> GameSettings.getInstance().setAutoProgress(cbAuto.isSelected()));
 
-        CheckBox cbAutoSave = new CheckBox("💾 Auto Save (Character Creation, Battle Victory)");
+        CheckBox cbAutoSave = new CheckBox("💾 Auto Save");
         cbAutoSave.setSelected(GameSettings.getInstance().isAutoSave());
-        cbAutoSave.setStyle("-fx-font-size: 14px;");
+        cbAutoSave.setStyle(cbStyle);
         cbAutoSave.setOnAction(e -> GameSettings.getInstance().setAutoSave(cbAutoSave.isSelected()));
 
-        // --- BACK BUTTON (UPDATED) ---
         Button btnBack = new Button("Save & Back");
         btnBack.getStyleClass().add("button-medieval");
         btnBack.setPrefWidth(200);
-
-        // PENTING: Gunakan method helper ini
         btnBack.setOnAction(e -> MainFX.showMainMenu());
 
         settingsPanel.getChildren().addAll(
@@ -102,8 +103,8 @@ public class SettingsScene {
 
     private void updateButtonStyles(Button bEasy, Button bMed, Button bHard) {
         AIDifficulty current = GameSettings.getInstance().getAIDifficulty();
-        String inactive = "";
-        String active = "-fx-background-color: #ffd700; -fx-text-fill: #3e1903;";
+        String inactive = "-fx-opacity: 0.6;";
+        String active = "-fx-background-color: #ffd700; -fx-text-fill: #3e1903; -fx-opacity: 1.0; -fx-effect: dropshadow(gaussian, #ff4500, 10, 0.6, 0, 0);";
 
         bEasy.setStyle(current == AIDifficulty.EASY ? active : inactive);
         bMed.setStyle(current == AIDifficulty.MEDIUM ? active : inactive);

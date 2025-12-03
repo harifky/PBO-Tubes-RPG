@@ -1,84 +1,8 @@
 {
-  "saveId": "74a280b0-e241-4a9f-a942-861ee4d834fa",
-  "savedAt": "2025-12-03T14:38:56.5293297",
+  "saveId": "d6f8bee9-af91-4022-b909-b29027c8b00a",
+  "savedAt": "2025-12-03T16:51:19.0077861",
   "saveVersion": 1,
-  "characters": [
-    {
-      "name": "Samudra",
-      "characterClass": "WARRIOR",
-      "element": "FIRE",
-      "level": 1,
-      "experience": 50,
-      "currentHP": 0,
-      "maxHP": 120,
-      "currentMP": 40,
-      "maxMP": 50,
-      "attack": 25,
-      "defense": 20,
-      "speed": 15,
-      "status": "DEAD"
-    },
-    {
-      "name": "Seruni",
-      "characterClass": "MAGE",
-      "element": "FIRE",
-      "level": 1,
-      "experience": 50,
-      "currentHP": 0,
-      "maxHP": 80,
-      "currentMP": 50,
-      "maxMP": 100,
-      "attack": 35,
-      "defense": 10,
-      "speed": 25,
-      "status": "DEAD"
-    },
-    {
-      "name": "Hafizh",
-      "characterClass": "MAGE",
-      "element": "EARTH",
-      "level": 1,
-      "experience": 0,
-      "currentHP": 0,
-      "maxHP": 80,
-      "currentMP": 60,
-      "maxMP": 100,
-      "attack": 35,
-      "defense": 10,
-      "speed": 25,
-      "status": "DEAD"
-    },
-    {
-      "name": "aaw",
-      "characterClass": "MAGE",
-      "element": "FIRE",
-      "level": 8,
-      "experience": -2750,
-      "currentHP": 0,
-      "maxHP": 150,
-      "currentMP": 100,
-      "maxMP": 135,
-      "attack": 56,
-      "defense": 24,
-      "speed": 32,
-      "status": "DEAD"
-    },
-    {
-      "name": "L",
-      "characterClass": "MAGE",
-      "element": "FIRE",
-      "level": 2,
-      "experience": 0,
-      "currentHP": 0,
-      "maxHP": 90,
-      "currentMP": 70,
-      "maxMP": 105,
-      "attack": 38,
-      "defense": 12,
-      "speed": 26,
-      "status": "DEAD"
-    }
-  ],
+  "characters": [],
   "battleHistory": {
     "totalBattles": 0,
     "wins": 0,
@@ -91,13 +15,14 @@
   },
   "metadata": {
     "slotName": "Save Slot 1",
-    "savedAt": "2025-12-03T14:38:56.5293297",
+    "savedAt": "2025-12-03T16:51:19.0077861",
     "totalBattles": 0,
-    "highestLevel": 8,
-    "highestLevelCharName": "aaw"
+    "highestLevel": 0,
+    "highestLevelCharName": "None"
   },
   "globalInventory": {
-    "Mana Potion": 1,
-    "Health Potion": 1
+    "Mana Potion": 5,
+    "Health Potion": 5,
+    "Revive": 2
   }
 }

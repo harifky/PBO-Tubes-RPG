@@ -1,86 +1,196 @@
-/* style.css */
+/* =========================================
+   FEAR & HUNGER INSPIRED THEME
+   Palette: Grim, Sepia, Dried Blood, Old Paper
+   ========================================= */
+
+/* --- BACKGROUND UTAMA --- */
 .root {
     -fx-font-family: "Times New Roman", serif;
-    -fx-background-color: #2b2b2b; /* Dark background */
+
+    /* Background tidak hitam pekat, tapi Coklat/Abu Gelap yang 'kotor' */
+    /* Memberikan efek Vignette (gelap di pinggir, sedikit terang di tengah) */
+    -fx-background-color:
+            radial-gradient(center 50% 40%, radius 90%, rgba(35, 30, 25, 0.2) 0%, rgba(5, 4, 3, 0.95) 100%),
+            linear-gradient(to bottom, #1f1c18 0%, #0e0d0b 100%);
 }
 
-/* Background panel seperti kertas pergamen */
-.panel-background {
-    -fx-background-color: #f4e4bc;
-    -fx-background-radius: 10;
-    -fx-border-color: #5c4033;
-    -fx-border-width: 3;
-    -fx-border-radius: 10;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.6), 10, 0, 0, 0);
+/* --- PANEL UTAMA --- */
+.dark-fantasy-panel {
+    /* Warna dasar kertas tua yang sangat gelap/busuk */
+    -fx-background-color: rgba(24, 22, 20, 0.92);
+
+    /* Border tidak emas mengkilap, tapi seperti besi tua atau kayu lapuk */
+    -fx-border-color: #4a443b;
+    -fx-border-width: 2px;
+    -fx-border-radius: 2; /* Sudut tajam, khas game retro/grim */
+    -fx-background-radius: 2;
+
+    /* Shadow kotor */
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 20, 0.4, 0, 5);
+
+    -fx-padding: 40px;
+    -fx-min-width: 700px;
 }
 
-/* Judul Game */
+/* Container Hero Showcase */
+.hero-showcase {
+    -fx-border-color: #5c5346;
+    -fx-border-width: 1px;
+    -fx-background-color: rgba(10, 9, 8, 0.7);
+    -fx-padding: 20;
+    -fx-effect: dropshadow(gaussian, black, 10, 0.5, 0, 0);
+}
+
+/* --- TYPOGRAPHY (Teks) --- */
+
+/* Judul Game - Warna Emas Pucat/Kusam */
 .game-title {
-    -fx-font-size: 36px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #ffd700; /* Emas */
-    -fx-effect: dropshadow(gaussian, black, 2, 1, 0, 0);
-}
+    -fx-font-family: "Times New Roman";
+    -fx-font-size: 52px;
+    -fx-font-weight: 900;
 
-/* Tombol seperti Kayu */
-.button-medieval {
-    -fx-background-color: linear-gradient(to bottom, #8b4513, #5e2605);
-    -fx-text-fill: #f4e4bc;
-    -fx-font-size: 14px;
-    -fx-font-weight: bold;
-    -fx-border-color: #ffd700; /* Border emas */
-    -fx-border-width: 2;
-    -fx-background-radius: 5;
-    -fx-border-radius: 5;
-    -fx-cursor: hand;
-}
+    /* Warna teks seperti kertas kuno atau tulang tua */
+    -fx-text-fill: #d4cdba;
 
-.button-medieval:hover {
-    -fx-background-color: linear-gradient(to bottom, #a0522d, #8b4513);
-    -fx-effect: glow(0.5);
-}
+    /* Efek teks kotor/grunge */
+    -fx-effect:
+            dropshadow(gaussian, rgba(0, 0, 0, 0.8), 1, 0.8, 2, 2),
+            dropshadow(one-pass-box, #2e2820, 1, 1, 0, 2);
 
-.button-medieval:pressed {
-    -fx-background-color: #3e1903;
-}
-
-/* Bar HP dan MP */
-.hp-bar .track { -fx-background-color: #555; }
-.hp-bar .bar { -fx-background-color: #ff3333; -fx-background-insets: 0; }
-
-.mp-bar .track { -fx-background-color: #555; }
-.mp-bar .bar { -fx-background-color: #3366ff; -fx-background-insets: 0; }
-
-/* style.css - Update */
-
-/* Efek Tombol 3D saat ditekan */
-.button-medieval:pressed {
-    -fx-background-color: #3e1903;
-    -fx-translate-y: 2; /* Tombol turun 2 pixel */
-    -fx-translate-x: 1;
-    -fx-effect: innerShadow(gaussian, rgba(0,0,0,0.8), 5, 0, 0, 0);
-}
-
-/* Style untuk Angka Damage Melayang */
-.damage-text {
-    -fx-font-family: "Impact", "Arial Black", sans-serif;
-    -fx-font-size: 24px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #ff3333; /* Merah terang */
-    -fx-effect: dropshadow(one-pass-box, black, 2, 2, 0, 0); /* Outline hitam */
-    -fx-stroke: black;
+    -fx-stroke: #0a0908;
     -fx-stroke-width: 1px;
 }
 
-.heal-text {
-    -fx-font-family: "Impact", sans-serif;
-    -fx-font-size: 24px;
-    -fx-text-fill: #33ff33; /* Hijau terang */
-    -fx-effect: dropshadow(one-pass-box, black, 2, 2, 0, 0);
+/* Judul Sekunder */
+.title-top {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #8f8576; /* Abu-abu kecoklatan */
+    -fx-effect: dropshadow(one-pass-box, black, 1, 1, 0, 1);
 }
 
-.crit-text {
-    -fx-font-size: 32px;
-    -fx-text-fill: #ffd700; /* Emas */
-    -fx-effect: dropshadow(gaussian, red, 5, 0.8, 0, 0);
+.title-main {
+    -fx-font-size: 48px;
+    -fx-font-weight: 900;
+    /* Merah Darah Kering (Dried Blood) */
+    -fx-text-fill: #8a2323;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0.3, 0, 0);
+}
+
+/* --- TOMBOL (GRIM STYLE) --- */
+.button-medieval {
+    -fx-background-radius: 0; /* Kotak tegas */
+    -fx-border-radius: 0;
+
+    /* Warna tombol: Abu-abu hangat gelap */
+    -fx-background-color: #2e2b26;
+
+    /* Border tipis kusam */
+    -fx-border-color: #575046;
+    -fx-border-width: 1px;
+
+    /* Teks: Parchment kusam */
+    -fx-text-fill: #c7bba5;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+
+    -fx-padding: 10 15 10 15;
+    -fx-transition: all 0.1s ease;
+}
+
+.button-medieval:hover {
+    /* Saat hover: Sedikit lebih terang */
+    -fx-background-color: #45403a;
+    -fx-border-color: #8c8372;
+    -fx-text-fill: #ffffff;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 5, 0, 0, 0);
+}
+
+.button-medieval:pressed {
+    -fx-background-color: #1a1816;
+    -fx-border-color: #3d3831;
+    -fx-text-fill: #8f8576;
+}
+
+/* Tombol Exit / Aksi Berbahaya (Warna Darah Gelap) */
+.button-exit {
+    -fx-background-color: #3d1212;
+    -fx-border-color: #5e1b1b;
+    -fx-text-fill: #bfa3a3;
+}
+.button-exit:hover {
+    -fx-background-color: #591a1a;
+    -fx-border-color: #8a2323;
+    -fx-text-fill: #ffcccc;
+}
+
+/* --- PANEL DALAM (HUD, Inventory, List) --- */
+.panel-background {
+    /* Latar transparan sangat gelap */
+    -fx-background-color: rgba(15, 14, 13, 0.85);
+
+    /* Garis pemisah tipis */
+    -fx-border-color: #3d3831;
+    -fx-border-width: 1px;
+    -fx-text-fill: #b0a899;
+}
+
+/* List View Cell */
+.list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #a39b8d;
+    -fx-font-family: "Courier New", monospace; /* Font mesin ketik/kuno */
+    -fx-font-size: 13px;
+    -fx-padding: 5 0 5 0;
+}
+.list-cell:filled:selected, .list-cell:filled:hover {
+    -fx-background-color: rgba(74, 68, 59, 0.3);
+    -fx-text-fill: #e8e1d5;
+    -fx-cursor: hand;
+}
+
+.label {
+    -fx-text-fill: #b0a899; /* Warna teks default (abu-abu kusam) */
+}
+
+/* --- PROGRESS BARS (HP & MP - Gaya Minimalis Suram) --- */
+.hp-bar .track, .mp-bar .track {
+    -fx-background-color: #0f0e0d;
+    -fx-border-color: #2e2b26;
+    -fx-border-width: 1px;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+}
+
+.hp-bar .bar {
+    /* Merah bata kusam, bukan merah neon */
+    -fx-background-color: #7a1f1f;
+    -fx-background-insets: 1;
+    -fx-background-radius: 0;
+}
+
+.mp-bar .bar {
+    /* Biru kusam/abu-abu kebiruan */
+    -fx-background-color: #2d3e50;
+    -fx-background-insets: 1;
+    -fx-background-radius: 0;
+}
+
+/* Battle Log Text Area */
+.text-area {
+    -fx-text-fill: #b0a899;
+    -fx-background-color: transparent;
+}
+.text-area .content {
+    -fx-background-color: rgba(20, 18, 16, 0.8);
+}
+
+/* --- SCROLL PANE --- */
+.scroll-pane {
+    -fx-background-color: transparent;
+}
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
 }

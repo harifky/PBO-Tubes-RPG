@@ -34,15 +34,16 @@ public class SaveLoadScene {
 
         VBox topBox = new VBox(title);
         topBox.setAlignment(Pos.CENTER);
+        topBox.setPadding(new Insets(0,0,20,0));
         layout.setTop(topBox);
 
-        slotsContainer = new VBox(15);
+        // Container untuk slots
+        slotsContainer = new VBox(20);
         slotsContainer.setAlignment(Pos.CENTER);
         refreshSlots();
 
         layout.setCenter(slotsContainer);
 
-        // --- BACK BUTTON (UPDATED) ---
         Button btnBack = new Button("Back");
         btnBack.getStyleClass().add("button-medieval");
         btnBack.setPrefWidth(150);
@@ -68,25 +69,29 @@ public class SaveLoadScene {
 
     private HBox createSlotCard(int slotNum, SaveMetadata meta) {
         HBox card = new HBox(20);
-        card.getStyleClass().add("panel-background");
-        card.setPadding(new Insets(15));
+        // Menggunakan style dark panel untuk setiap kartu slot
+        card.getStyleClass().add("dark-fantasy-panel");
+        card.setPadding(new Insets(20)); // Padding dalam kartu
         card.setAlignment(Pos.CENTER_LEFT);
         card.setMaxWidth(600);
+        // Reset min-width bawaan class css agar tidak terlalu lebar untuk slot
+        card.setStyle("-fx-min-width: 500px; -fx-padding: 20px;");
 
         VBox infoBox = new VBox(5);
         Label lblSlotName = new Label("Slot " + slotNum);
-        lblSlotName.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+        lblSlotName.setStyle("-fx-font-weight: bold; -fx-font-size: 18px; -fx-text-fill: #ffd700;");
 
         Label lblDetail = new Label();
         boolean isEmpty = meta == null || meta.getSavedAt() == null || meta.getSlotName().contains("Empty");
 
         if (isEmpty) {
             lblDetail.setText("-- Empty Slot --");
-            lblDetail.setStyle("-fx-text-fill: #777; -fx-font-style: italic;");
+            lblDetail.setStyle("-fx-text-fill: #888; -fx-font-style: italic;");
         } else {
             String dateStr = meta.getSavedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
             lblDetail.setText(String.format("Lv.%d %s | Battles: %d\n%s",
                     meta.getHighestLevel(), meta.getHighestLevelCharName(), meta.getTotalBattles(), dateStr));
+            lblDetail.setStyle("-fx-text-fill: white; -fx-font-size: 14px;");
         }
         infoBox.getChildren().addAll(lblSlotName, lblDetail);
         HBox.setHgrow(infoBox, Priority.ALWAYS);
@@ -97,11 +102,13 @@ public class SaveLoadScene {
         if (isSaveMode) {
             Button btnSave = new Button("SAVE");
             btnSave.getStyleClass().add("button-medieval");
+            btnSave.setPrefWidth(80);
             btnSave.setOnAction(e -> handleSave(slotNum));
             btnBox.getChildren().add(btnSave);
         } else {
             Button btnLoad = new Button("LOAD");
             btnLoad.getStyleClass().add("button-medieval");
+            btnLoad.setPrefWidth(80);
             btnLoad.setDisable(isEmpty);
             btnLoad.setOnAction(e -> handleLoad(slotNum));
             btnBox.getChildren().add(btnLoad);
@@ -109,7 +116,8 @@ public class SaveLoadScene {
 
         if (!isEmpty) {
             Button btnDelete = new Button("X");
-            btnDelete.setStyle("-fx-background-color: #a00; -fx-text-fill: white; -fx-font-weight: bold;");
+            btnDelete.getStyleClass().add("button-medieval");
+            btnDelete.setStyle("-fx-background-color: #8b0000; -fx-text-fill: white;");
             btnDelete.setOnAction(e -> handleDelete(slotNum));
             btnBox.getChildren().add(btnDelete);
         }
@@ -146,7 +154,6 @@ public class SaveLoadScene {
             MedievalPopup.show(rootStack, "GAME LOADED",
                     "Welcome back, Hero!\nGame loaded successfully.",
                     MedievalPopup.Type.SUCCESS,
-                    // PENTING: Gunakan MainFX.showMainMenu() setelah load sukses
                     () -> MainFX.showMainMenu()
             );
 
