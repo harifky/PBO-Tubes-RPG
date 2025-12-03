@@ -15,6 +15,8 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public class BattleScene {
@@ -348,13 +350,21 @@ public class BattleScene {
         }
 
         if (battle.getBattleStatus() != BattleStatus.ONGOING) {
-            handleBattleEnd(battle.getBattleStatus());
+            // Use Platform.runLater to avoid showAndWait during animation
+            javafx.application.Platform.runLater(() -> handleBattleEnd(battle.getBattleStatus()));
         }
     }
 
     private void updateBars(Character p, Character e) {
-        enemyNameLbl.setText(String.format("%s (Lv.%d)", e.getName(), e.getLevel()));
+        // Show boss indicator
+        String bossIndicator = e.isBoss() ? " 👑 BOSS" : "";
+        enemyNameLbl.setText(String.format("%s (Lv.%d)%s", e.getName(), e.getLevel(), bossIndicator));
         playerNameLbl.setText(String.format("%s (Lv.%d) - %s", p.getName(), p.getLevel(), p.getStatus()));
+
+        // Update progress bar values to reflect current state
+        playerHP.setProgress((double) p.getCurrentHP() / p.getMaxHP());
+        playerMP.setProgress((double) p.getCurrentMP() / p.getMaxMP());
+        enemyHP.setProgress((double) e.getCurrentHP() / e.getMaxHP());
     }
 
     private void executePlayerAction(ActionType type, Skill skill, Item item) {
@@ -409,10 +419,199 @@ public class BattleScene {
 
     private void handleBattleEnd(BattleStatus status) {
         actionMenu.setDisable(true);
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Battle Result");
-        alert.setHeaderText(status == BattleStatus.VICTORY ? "VICTORY!" : "DEFEAT...");
-        alert.show();
-        alert.setOnHidden(e -> MainFX.primaryStage.setScene(new MainMenuScene().getScene()));
+
+        Battle battle = MainFX.battleService.getCurrentBattle();
+        if (battle == null) {
+            // Safety check
+            MainFX.primaryStage.setScene(new MainMenuScene().getScene());
+            return;
+        }
+
+        // Auto-save if enabled
+        if (com.elemental.model.GameSettings.getInstance().isAutoSave()) {
+            MainFX.saveLoadService.autoSave();
+            battleLog.appendText("\n💾 Game auto-saved!\n");
+        }
+
+        if (status == BattleStatus.VICTORY) {
+            // Victory: Show continue or exit dialog
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("⚔️ VICTORY!");
+            alert.setHeaderText("🎉 You won the battle!");
+
+            // Get current player safely
+            if (battle.getPlayerTeam().isEmpty()) {
+                MainFX.primaryStage.setScene(new MainMenuScene().getScene());
+                return;
+            }
+            Character player = battle.getPlayerTeam().get(0);
+
+            // Create buttons
+            ButtonType btnContinue = new ButtonType("⚔️ Lanjut Battle");
+            ButtonType btnExit = new ButtonType("🏠 Keluar ke Menu");
+
+            alert.getButtonTypes().setAll(btnContinue, btnExit);
+
+            alert.showAndWait().ifPresent(response -> {
+                if (response == btnContinue) {
+                    try {
+                        // Continue battle - start new battle with same character
+                        battleLog.appendText("\n⚔️ Preparing next battle...\n");
+
+                        // Generate new enemies
+                        List<com.elemental.model.Character> enemies = generateEnemyTeam(player.getLevel());
+                        MainFX.battleService.startBattle(Collections.singletonList(player), enemies);
+
+                        // Reload battle scene
+                        MainFX.primaryStage.getScene().setRoot(new BattleScene().getLayout());
+                    } catch (Exception e) {
+                        // If error, go back to menu
+                        System.err.println("Error starting next battle: " + e.getMessage());
+                        MainFX.primaryStage.setScene(new MainMenuScene().getScene());
+                    }
+                } else {
+                    // Exit to menu
+                    MainFX.primaryStage.setScene(new MainMenuScene().getScene());
+                }
+            });
+        } else {
+            // Defeat: Direct exit to menu
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("💀 DEFEAT");
+            alert.setHeaderText("You were defeated...");
+            alert.setContentText("Returning to main menu.");
+            alert.showAndWait();
+            MainFX.primaryStage.setScene(new MainMenuScene().getScene());
+        }
+    }
+
+    /**
+     * Generate enemy team with boss system and smart difficulty
+     */
+    private List<com.elemental.model.Character> generateEnemyTeam(int playerLevel) {
+        // Get player element from current battle or character service
+        com.elemental.model.Element playerElement = null;
+        Battle currentBattle = MainFX.battleService.getCurrentBattle();
+        if (currentBattle != null && !currentBattle.getPlayerTeam().isEmpty()) {
+            playerElement = currentBattle.getPlayerTeam().get(0).getElement();
+        }
+
+        if (playerLevel >= 5 && playerLevel % 5 == 0) {
+            // Boss battle
+            String[] bossNames = {"Dragon", "Phoenix", "Golem", "Wraith", "Demon Lord"};
+            int bossIndex = ((playerLevel / 5) - 1) % bossNames.length;
+            String bossName = bossNames[bossIndex];
+
+            com.elemental.model.Character boss = com.elemental.factory.EnemyFactory.createBoss(bossName, playerLevel);
+            return List.of(boss);
+        } else {
+            // Normal enemy - smart generation based on AI difficulty for level 1-10
+            if (playerLevel <= 10) {
+                com.elemental.model.AIDifficulty difficulty = com.elemental.model.GameSettings.getInstance().getAIDifficulty();
+
+                switch (difficulty) {
+                    case EASY:
+                        // Easy: Weak enemy (disadvantage element) - Learn element system
+                        return List.of(createWeakEnemy(playerLevel, playerElement));
+
+                    case MEDIUM:
+                        // Medium: Balanced enemy (neutral or same element) - Fair fight
+                        return List.of(createBalancedEnemy(playerLevel, playerElement));
+
+                    case HARD:
+                        // Hard: Strong enemy (advantage element) - Challenge
+                        return List.of(createStrongEnemy(playerLevel, playerElement));
+
+                    default:
+                        return List.of(com.elemental.factory.EnemyFactory.createEnemy(playerLevel));
+                }
+            } else {
+                // Level 11+: Always random enemy (normal difficulty)
+                return List.of(com.elemental.factory.EnemyFactory.createEnemy(playerLevel));
+            }
+        }
+    }
+
+    /**
+     * Create weak enemy (element disadvantage) for beginner friendly gameplay
+     * Player has advantage: 1.5x damage to enemy, enemy deals 0.7x damage
+     */
+    private com.elemental.model.Character createWeakEnemy(int level, com.elemental.model.Element playerElement) {
+        if (playerElement == null) {
+            return com.elemental.factory.EnemyFactory.createEnemy(level);
+        }
+
+        // Get weak element (player has advantage)
+        com.elemental.model.Element weakElement;
+        switch (playerElement) {
+            case FIRE:
+                weakElement = com.elemental.model.Element.EARTH; // Fire beats Earth
+                break;
+            case WATER:
+                weakElement = com.elemental.model.Element.FIRE; // Water beats Fire
+                break;
+            case EARTH:
+                weakElement = com.elemental.model.Element.WATER; // Earth beats Water
+                break;
+            default:
+                weakElement = com.elemental.model.Element.FIRE;
+        }
+
+        // Create enemy with weak element
+        String[] weakEnemyNames = {"Goblin", "Skeleton", "Bandit"};
+        String name = weakEnemyNames[(int)(Math.random() * weakEnemyNames.length)];
+        com.elemental.model.CharacterClass randomClass = com.elemental.model.CharacterClass.values()[(int)(Math.random() * 3)];
+
+        return com.elemental.factory.EnemyFactory.createEnemy(name, randomClass, weakElement, level);
+    }
+
+    /**
+     * Create balanced enemy (neutral element) for fair gameplay
+     * Both deal normal damage: 1.0x (no advantage/disadvantage)
+     */
+    private com.elemental.model.Character createBalancedEnemy(int level, com.elemental.model.Element playerElement) {
+        if (playerElement == null) {
+            return com.elemental.factory.EnemyFactory.createEnemy(level);
+        }
+
+        // Use same element as player (neutral matchup: 1.0x damage both ways)
+        String[] balancedEnemyNames = {"Orc", "Troll", "Warrior"};
+        String name = balancedEnemyNames[(int)(Math.random() * balancedEnemyNames.length)];
+        com.elemental.model.CharacterClass randomClass = com.elemental.model.CharacterClass.values()[(int)(Math.random() * 3)];
+
+        return com.elemental.factory.EnemyFactory.createEnemy(name, randomClass, playerElement, level);
+    }
+
+    /**
+     * Create strong enemy (element advantage) for challenging gameplay
+     * Enemy has advantage: 1.5x damage to player, player deals 0.7x damage
+     */
+    private com.elemental.model.Character createStrongEnemy(int level, com.elemental.model.Element playerElement) {
+        if (playerElement == null) {
+            return com.elemental.factory.EnemyFactory.createEnemy(level);
+        }
+
+        // Get strong element (enemy has advantage)
+        com.elemental.model.Element strongElement;
+        switch (playerElement) {
+            case FIRE:
+                strongElement = com.elemental.model.Element.WATER; // Water beats Fire
+                break;
+            case WATER:
+                strongElement = com.elemental.model.Element.EARTH; // Earth beats Water
+                break;
+            case EARTH:
+                strongElement = com.elemental.model.Element.FIRE; // Fire beats Earth
+                break;
+            default:
+                strongElement = com.elemental.model.Element.WATER;
+        }
+
+        // Create enemy with strong element
+        String[] strongEnemyNames = {"Elite Guard", "Warlock", "Champion"};
+        String name = strongEnemyNames[(int)(Math.random() * strongEnemyNames.length)];
+        com.elemental.model.CharacterClass randomClass = com.elemental.model.CharacterClass.values()[(int)(Math.random() * 3)];
+
+        return com.elemental.factory.EnemyFactory.createEnemy(name, randomClass, strongElement, level);
     }
 }

@@ -22,6 +22,7 @@ public class SaveLoadService {
     private final Gson gson;
     private final CharacterService characterService;
     private BattleHistory battleHistory;
+    private int currentSlot; // Track which slot is currently loaded/active
 
     public SaveLoadService(CharacterService characterService) {
         this.characterService = characterService;
@@ -30,6 +31,7 @@ public class SaveLoadService {
                 .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
                 .create();
         this.battleHistory = new BattleHistory();
+        this.currentSlot = 1; // Default to slot 1
         ensureSaveDirectoryExists();
     }
 
@@ -52,6 +54,9 @@ public class SaveLoadService {
             // 4. Write to file
             Path savePath = getSaveFilePath(slotNumber);
             Files.writeString(savePath, json);
+
+            // 5. Update current slot (so auto-save knows which slot to use)
+            this.currentSlot = slotNumber;
 
             System.out.println("✓ Game saved to Slot " + slotNumber);
             return true;
@@ -88,6 +93,9 @@ public class SaveLoadService {
             if (saveData.getSaveVersion() > CURRENT_VERSION) {
                 throw new SaveException("Save file is from newer version");
             }
+
+            // 5. Update current slot (so auto-save knows which slot to use)
+            this.currentSlot = slotNumber;
 
             System.out.println("✓ Game loaded from Slot " + slotNumber);
             return saveData;
@@ -202,11 +210,12 @@ public class SaveLoadService {
     }
 
     /**
-     * FR-SAVE-001: Auto-save to slot 1 after battle
+     * FR-SAVE-001: Auto-save to current active slot
+     * Saves to whichever slot was last loaded/saved
      */
     public void autoSave() {
         try {
-            saveGame(1);
+            saveGame(currentSlot);
         } catch (SaveException e) {
             System.err.println("Auto-save failed: " + e.getMessage());
         }
@@ -284,8 +293,18 @@ public class SaveLoadService {
         }
     }
 
-    // Getter
+    // Getters
     public BattleHistory getBattleHistory() {
         return battleHistory;
+    }
+
+    public int getCurrentSlot() {
+        return currentSlot;
+    }
+
+    // Setter
+    public void setCurrentSlot(int slotNumber) throws SaveException {
+        validateSlotNumber(slotNumber);
+        this.currentSlot = slotNumber;
     }
 }

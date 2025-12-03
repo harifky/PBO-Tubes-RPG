@@ -62,6 +62,9 @@ public class EnemyFactory {
             boss.gainExperience(boss.getLevel() * 100);
         }
 
+        // Mark as boss
+        boss.setIsBoss(true);
+
         return boss;
     }
 

@@ -106,12 +106,30 @@ public class BattleScreen {
     private List<com.elemental.model.Character> generateEnemyTeam(int playerLevel) {
         List<com.elemental.model.Character> enemies = new ArrayList<>();
 
-        // Generate 1-2 enemies
-        int enemyCount = (int) (Math.random() * 2) + 1;
+        // Check if player level is 5 or multiple of 5 (5, 10, 15, 20, etc)
+        if (playerLevel >= 5 && playerLevel % 5 == 0) {
+            // BOSS BATTLE!
+            String[] bossNames = {"Dragon", "Phoenix", "Golem", "Wraith", "Demon Lord"};
+            int bossIndex = ((playerLevel / 5) - 1) % bossNames.length;
+            String bossName = bossNames[bossIndex];
 
-        for (int i = 0; i < enemyCount; i++) {
-            int enemyLevel = Math.max(1, playerLevel + (int) (Math.random() * 3) - 1);
-            enemies.add(EnemyFactory.createEnemy(enemyLevel));
+            // Boss is same level as player
+            com.elemental.model.Character boss = EnemyFactory.createBoss(bossName, playerLevel);
+            enemies.add(boss);
+
+            System.out.println("\n" + "=".repeat(50));
+            System.out.println("⚠️  BOSS BATTLE WARNING! ⚠️");
+            System.out.println("🔥 " + bossName + " (Level " + playerLevel + ") has appeared!");
+            System.out.println("💀 Prepare for an epic battle!");
+            System.out.println("=".repeat(50) + "\n");
+        } else {
+            // Normal battle - Generate 1-2 enemies
+            int enemyCount = (int) (Math.random() * 2) + 1;
+
+            for (int i = 0; i < enemyCount; i++) {
+                int enemyLevel = Math.max(1, playerLevel + (int) (Math.random() * 3) - 1);
+                enemies.add(EnemyFactory.createEnemy(enemyLevel));
+            }
         }
 
         return enemies;
@@ -200,9 +218,10 @@ public class BattleScreen {
         String hpBar = createHPBar(character);
         String mpBar = createMPBar(character);
         String statusText = character.getStatus() != Status.NORMAL ? " [" + character.getStatus() + "]" : "";
+        String bossIndicator = character.isBoss() ? " 👑 BOSS" : "";
 
-        System.out.println(String.format("  %s (Lv.%d %s)%s",
-                character.getName(), character.getLevel(), character.getElement(), statusText));
+        System.out.println(String.format("  %s (Lv.%d %s)%s%s",
+                character.getName(), character.getLevel(), character.getElement(), statusText, bossIndicator));
         System.out.println("    HP: " + hpBar + " " + character.getCurrentHP() + "/" + character.getMaxHP());
         System.out.println("    MP: " + mpBar + " " + character.getCurrentMP() + "/" + character.getMaxMP());
     }
@@ -433,10 +452,10 @@ public class BattleScreen {
         AIDifficulty baseDifficulty = GameSettings.getInstance().getAIDifficulty();
 
         // 2. Check for special cases
-        // TODO: Add boss flag check when implemented
-        // if (enemy.isBoss()) {
-        // return AIDifficulty.HARD; // Boss always uses Hard AI
-        // }
+        // Boss always uses HARD AI regardless of settings
+        if (enemy.isBoss()) {
+            return AIDifficulty.HARD; // Boss always uses Hard AI
+        }
 
         // 3. Get enemy level for context
         int enemyLevel = enemy.getLevel();
@@ -533,15 +552,43 @@ public class BattleScreen {
         // Display final log
         displayBattleLog();
 
-        // Update battle history and auto-save
+        // Update battle history
         if (saveLoadService != null) {
             int enemiesDefeated = (status == BattleStatus.VICTORY) ? currentBattle.getEnemyTeam().size() : 0;
             saveLoadService.getBattleHistory().recordBattle(status, enemiesDefeated);
-            saveLoadService.autoSave();
+
+            // Auto-save if enabled
+            if (GameSettings.getInstance().isAutoSave()) {
+                saveLoadService.autoSave();
+                System.out.println("\n💾 Game auto-saved!");
+            }
         }
 
-        System.out.println("\nPress Enter to return to main menu...");
-        scanner.nextLine();
+        // Victory: Ask to continue or exit
+        if (status == BattleStatus.VICTORY) {
+            System.out.println("\n╔══════════════════════════════════════════════════╗");
+            System.out.println("║              WHAT DO YOU WANT TO DO?            ║");
+            System.out.println("╚══════════════════════════════════════════════════╝");
+            System.out.println("1. Lanjut Battle (Continue)");
+            System.out.println("2. Keluar ke Menu (Exit to Menu)");
+            System.out.print("\nPilihan (1/2): ");
+
+            String choice = scanner.nextLine().trim();
+
+            if (choice.equals("1")) {
+                // Continue battle - call startBattle again
+                System.out.println("\n⚔️ Preparing next battle...\n");
+                startBattle();
+            } else {
+                // Exit to menu
+                System.out.println("\n✅ Returning to main menu...");
+            }
+        } else {
+            // Defeat: Just return to menu
+            System.out.println("\n💀 Game Over! Returning to main menu...");
+            System.out.println("Press Enter to continue...");
+            scanner.nextLine();
+        }
     }
 
     /**

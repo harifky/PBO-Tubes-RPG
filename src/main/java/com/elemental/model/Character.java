@@ -40,6 +40,9 @@ public class Character {
     private Map<String, Integer> itemBuffs; // Buff type ("ATTACK"/"DEFENSE") -> remaining turns
     private Map<String, Integer> itemBuffValues; // Buff type -> percentage value
 
+    // Boss flag
+    private boolean isBoss; // Mark if this character is a boss enemy
+
     // Constructor
     public Character(String name, CharacterClass characterClass, Element element) {
         this.name = name;
@@ -53,6 +56,7 @@ public class Character {
         this.inventory = new Inventory(); // Initialize with beginner items
         this.itemBuffs = new HashMap<>();
         this.itemBuffValues = new HashMap<>();
+        this.isBoss = false; // Default to non-boss
 
         // Initialize base stats based on class
         initializeBaseStats();
@@ -92,13 +96,16 @@ public class Character {
     private void initializeSkills() {
         switch (characterClass) {
             case MAGE:
-                this.skills = Skill.getMageSkills();
+                // Mage skills are element-specific
+                this.skills = Skill.getMageSkills(this.element);
                 break;
             case WARRIOR:
-                this.skills = Skill.getWarriorSkills();
+                // Warrior skills are element-specific
+                this.skills = Skill.getWarriorSkills(this.element);
                 break;
             case RANGER:
-                this.skills = Skill.getRangerSkills();
+                // Ranger skills are element-specific
+                this.skills = Skill.getRangerSkills(this.element);
                 break;
         }
     }
@@ -384,9 +391,17 @@ public class Character {
         return inventory;
     }
 
+    public boolean isBoss() {
+        return isBoss;
+    }
+
     // Setters
     public void setStatus(Status status) {
         this.status = status;
+    }
+
+    public void setIsBoss(boolean isBoss) {
+        this.isBoss = isBoss;
     }
 
     public void setCurrentHP(int currentHP) {

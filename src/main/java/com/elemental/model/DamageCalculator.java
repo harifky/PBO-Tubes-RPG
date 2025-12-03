@@ -25,8 +25,9 @@ public class DamageCalculator {
         // Base Damage = Attacker.Attack × Skill Multiplier
         double baseDamage = attacker.getAttack() * skill.getDamageMultiplier();
 
-        // Element Modifier
-        double elementModifier = getElementModifier(attacker.getElement(), defender.getElement());
+        // Element Modifier - use skill element if available, otherwise use attacker element
+        Element attackElement = skill.getElement() != null ? skill.getElement() : attacker.getElement();
+        double elementModifier = getElementModifier(attackElement, defender.getElement());
 
         // Defense Reduction = Base Damage × (Defender.Defense / 200)
         double defenseReduction = baseDamage * (defender.getDefense() / 200.0);

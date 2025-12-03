@@ -72,6 +72,11 @@ public class SettingsScene {
         cbAuto.setStyle("-fx-font-size: 14px;");
         cbAuto.setOnAction(e -> GameSettings.getInstance().setAutoProgress(cbAuto.isSelected()));
 
+        CheckBox cbAutoSave = new CheckBox("💾 Auto Save (Character Creation, Battle Victory)");
+        cbAutoSave.setSelected(GameSettings.getInstance().isAutoSave());
+        cbAutoSave.setStyle("-fx-font-size: 14px;");
+        cbAutoSave.setOnAction(e -> GameSettings.getInstance().setAutoSave(cbAutoSave.isSelected()));
+
         // --- BACK BUTTON ---
         Button btnBack = new Button("Save & Back");
         btnBack.getStyleClass().add("button-medieval");
@@ -82,7 +87,7 @@ public class SettingsScene {
         settingsPanel.getChildren().addAll(
                 lblDiff, diffBox,
                 new Separator(),
-                cbLog, cbAuto,
+                cbLog, cbAuto, cbAutoSave,
                 new Separator(),
                 btnBack
         );

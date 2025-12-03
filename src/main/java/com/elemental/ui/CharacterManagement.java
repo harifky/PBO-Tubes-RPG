@@ -3,17 +3,21 @@ package com.elemental.ui;
 import com.elemental.model.Character;
 import com.elemental.model.CharacterClass;
 import com.elemental.model.Element;
+import com.elemental.model.GameSettings;
 import com.elemental.service.CharacterService;
+import com.elemental.service.SaveLoadService;
 import com.elemental.factory.CharacterFactory;
 
 import java.util.Scanner;
 
 public class CharacterManagement {
     private CharacterService characterService;
+    private SaveLoadService saveLoadService;
     private Scanner scanner;
 
-    public CharacterManagement(CharacterService characterService, Scanner scanner) {
+    public CharacterManagement(CharacterService characterService, SaveLoadService saveLoadService, Scanner scanner) {
         this.characterService = characterService;
+        this.saveLoadService = saveLoadService;
         this.scanner = scanner;
     }
 
@@ -42,6 +46,9 @@ public class CharacterManagement {
                 case "6":
                     testLevelUp();
                     break;
+                case "7":
+                    reviveCharacter();
+                    break;
                 case "0":
                     running = false;
                     break;
@@ -61,6 +68,7 @@ public class CharacterManagement {
         System.out.println("4. Select Character");
         System.out.println("5. Delete Character");
         System.out.println("6. Test Level Up System");
+        System.out.println("7. Revive Dead Character");
         System.out.println("0. Back to Main Menu");
         System.out.println("─────────────────────────────────────────");
 
@@ -104,6 +112,12 @@ public class CharacterManagement {
             Character newChar = characterService.createCharacter(name, characterClass, element);
             System.out.println("\n✓ Character created successfully!");
             System.out.println(newChar.getStatsPreview());
+
+            // Auto-save if enabled
+            if (saveLoadService != null && GameSettings.getInstance().isAutoSave()) {
+                saveLoadService.autoSave();
+                System.out.println("\n💾 Game auto-saved!");
+            }
         } catch (IllegalArgumentException e) {
             System.out.println("❌ Error creating character: " + e.getMessage());
         }
@@ -278,6 +292,96 @@ public class CharacterManagement {
                 System.out.println("🎉 LEVEL UP! " + oldLevel + " → " + newLevel);
             }
             System.out.println("\n" + character.getStatsPreview());
+        } catch (NumberFormatException e) {
+            System.out.println("❌ Invalid input!");
+        }
+    }
+
+    /**
+     * Revive a dead character using Revive item
+     */
+    private void reviveCharacter() {
+        if (characterService.isRosterEmpty()) {
+            System.out.println("\n❌ No characters in roster!");
+            return;
+        }
+
+        // Find dead characters
+        java.util.List<Character> allCharacters = characterService.getAllCharacters();
+        java.util.List<Character> deadCharacters = new java.util.ArrayList<>();
+
+        for (int i = 0; i < allCharacters.size(); i++) {
+            Character c = allCharacters.get(i);
+            if (!c.isAlive()) {
+                deadCharacters.add(c);
+            }
+        }
+
+        if (deadCharacters.isEmpty()) {
+            System.out.println("\n✓ All characters are alive! No one needs reviving.");
+            return;
+        }
+
+        // Display dead characters
+        System.out.println("\n╔════════════════════════════════════════╗");
+        System.out.println("║         REVIVE DEAD CHARACTER          ║");
+        System.out.println("╚════════════════════════════════════════╝");
+        System.out.println("Dead Characters:");
+        for (int i = 0; i < deadCharacters.size(); i++) {
+            Character c = deadCharacters.get(i);
+            System.out.println((i + 1) + ". " + c.getName() +
+                " (Lv." + c.getLevel() + " " + c.getCharacterClass() +
+                " " + c.getElement() + ") [DEAD]");
+        }
+
+        System.out.print("\nEnter character number to revive (0 to cancel): ");
+
+        try {
+            int choice = Integer.parseInt(scanner.nextLine().trim());
+            if (choice == 0) {
+                System.out.println("Revive cancelled.");
+                return;
+            }
+
+            if (choice < 1 || choice > deadCharacters.size()) {
+                System.out.println("❌ Invalid choice!");
+                return;
+            }
+
+            Character toRevive = deadCharacters.get(choice - 1);
+
+            // Check if character has Revive item in inventory
+            if (!toRevive.getInventory().hasItem("Revive")) {
+                System.out.println("\n❌ " + toRevive.getName() + " doesn't have a Revive item!");
+                System.out.println("💡 Tip: You need a 'Revive' item in the character's inventory.");
+                System.out.println("    Revive items can be obtained during battles.");
+                return;
+            }
+
+            // Confirm revive
+            System.out.print("\nUse 1 Revive item to restore " + toRevive.getName() + " with 30% HP? (y/n): ");
+            String confirm = scanner.nextLine().trim().toLowerCase();
+
+            if (confirm.equals("y") || confirm.equals("yes")) {
+                // Apply revive effect (30% HP restore)
+                int reviveHP = (int) (toRevive.getMaxHP() * 0.30);
+                toRevive.setCurrentHP(reviveHP);
+                toRevive.setStatus(com.elemental.model.Status.NORMAL);
+
+                // Remove item from inventory
+                toRevive.getInventory().removeItem("Revive", 1);
+
+                System.out.println("\n════════════════════════════════════════");
+                System.out.println("✨ REVIVAL SUCCESSFUL! ✨");
+                System.out.println("════════════════════════════════════════");
+                System.out.println("💚 " + toRevive.getName() + " has been revived!");
+                System.out.println("HP Restored: " + reviveHP + "/" + toRevive.getMaxHP() + " (30%)");
+                System.out.println("Status: " + toRevive.getStatus());
+                System.out.println("\n" + toRevive.getStatsPreview());
+            } else {
+                System.out.println("Revive cancelled.");
+            }
+
         } catch (NumberFormatException e) {
             System.out.println("❌ Invalid input!");
         }
