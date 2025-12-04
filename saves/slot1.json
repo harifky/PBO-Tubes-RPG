@@ -1,12 +1,18 @@
 {
+<<<<<<< HEAD
   "saveId": "92f01ecd-7e93-4b66-b6e6-434cc8471de5",
   "savedAt": "2025-12-04T14:15:00.7043538",
+=======
+  "saveId": "c1535359-96e0-4569-a19c-bdb174d05af6",
+  "savedAt": "2025-12-04T14:07:10.2248404",
+>>>>>>> d82561e07bef4243a87e76c84680226146f4b18b
   "saveVersion": 1,
   "characters": [
     {
       "name": "dad",
       "characterClass": "WARRIOR",
       "element": "FIRE",
+<<<<<<< HEAD
       "level": 1,
       "experience": 0,
       "currentHP": 120,
@@ -17,6 +23,18 @@
       "defense": 20,
       "speed": 15,
       "status": "NORMAL"
+=======
+      "level": 2,
+      "experience": 0,
+      "currentHP": 0,
+      "maxHP": 130,
+      "currentMP": 30,
+      "maxMP": 55,
+      "attack": 28,
+      "defense": 22,
+      "speed": 16,
+      "status": "DEAD"
+>>>>>>> d82561e07bef4243a87e76c84680226146f4b18b
     }
   ],
   "battleHistory": {
@@ -31,6 +49,7 @@
   },
   "metadata": {
     "slotName": "Save Slot 1",
+<<<<<<< HEAD
     "savedAt": "2025-12-04T14:15:00.7043538",
     "totalBattles": 0,
     "highestLevel": 1,
@@ -40,5 +59,16 @@
     "Mana Potion": 5,
     "Health Potion": 5,
     "Revive": 2
+=======
+    "savedAt": "2025-12-04T14:07:10.2248404",
+    "totalBattles": 0,
+    "highestLevel": 2,
+    "highestLevelCharName": "ad"
+  },
+  "globalInventory": {
+    "Mana Potion": 6,
+    "Health Potion": 1,
+    "Revive": 1
+>>>>>>> d82561e07bef4243a87e76c84680226146f4b18b
   }
 }
