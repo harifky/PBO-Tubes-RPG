@@ -1,5 +1,7 @@
 package com.elemental.model;
 
+import com.elemental.observer.BattleObserver;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -21,12 +23,128 @@ public class Battle {
     private Character currentTurn;
     private Random random;
 
+    // Observer Pattern - List of observers
+    private List<BattleObserver> observers;
+
     public Battle() {
         this.battleLog = new BattleLog();
         this.battleStatus = BattleStatus.ONGOING;
         this.turnNumber = 0;
         this.random = new Random();
+        this.observers = new ArrayList<>();
     }
+
+    // ==================== OBSERVER PATTERN METHODS ====================
+
+    /**
+     * Menambahkan observer untuk memantau event battle
+     * @param observer Observer yang akan ditambahkan
+     */
+    public void addObserver(BattleObserver observer) {
+        if (observer != null && !observers.contains(observer)) {
+            observers.add(observer);
+        }
+    }
+
+    /**
+     * Menghapus observer dari daftar
+     * @param observer Observer yang akan dihapus
+     */
+    public void removeObserver(BattleObserver observer) {
+        observers.remove(observer);
+    }
+
+    /**
+     * Notify semua observers ketika battle dimulai
+     */
+    private void notifyBattleStart() {
+        for (BattleObserver observer : observers) {
+            observer.onBattleStart();
+        }
+    }
+
+    /**
+     * Notify semua observers ketika giliran berubah
+     */
+    private void notifyTurnChange(Character character, int turnNumber) {
+        for (BattleObserver observer : observers) {
+            observer.onTurnChange(character, turnNumber);
+        }
+    }
+
+    /**
+     * Notify semua observers ketika ada serangan
+     */
+    private void notifyAttack(Character attacker, Character target, int damage, boolean isCritical) {
+        for (BattleObserver observer : observers) {
+            observer.onAttack(attacker, target, damage, isCritical);
+        }
+    }
+
+    /**
+     * Notify semua observers ketika skill digunakan
+     */
+    private void notifySkillUsed(Character user, Skill skill, Character target) {
+        for (BattleObserver observer : observers) {
+            observer.onSkillUsed(user, skill, target);
+        }
+    }
+
+    /**
+     * Notify semua observers ketika item digunakan
+     */
+    private void notifyItemUsed(Character user, Item item, Character target) {
+        for (BattleObserver observer : observers) {
+            observer.onItemUsed(user, item, target);
+        }
+    }
+
+    /**
+     * Notify semua observers ketika karakter defend
+     */
+    private void notifyDefend(Character character) {
+        for (BattleObserver observer : observers) {
+            observer.onDefend(character);
+        }
+    }
+
+    /**
+     * Notify semua observers ketika HP berubah
+     */
+    private void notifyHPChange(Character character, int oldHP, int newHP) {
+        for (BattleObserver observer : observers) {
+            observer.onHPChange(character, oldHP, newHP);
+        }
+    }
+
+    /**
+     * Notify semua observers ketika karakter dikalahkan
+     */
+    private void notifyCharacterDefeated(Character character) {
+        for (BattleObserver observer : observers) {
+            observer.onCharacterDefeated(character);
+        }
+    }
+
+    /**
+     * Notify semua observers ketika battle berakhir
+     */
+    private void notifyBattleEnd(BattleStatus status) {
+        for (BattleObserver observer : observers) {
+            observer.onBattleEnd(status);
+        }
+    }
+
+    /**
+     * Notify semua observers dengan pesan log
+     */
+    private void notifyLogMessage(String message) {
+        for (BattleObserver observer : observers) {
+            observer.onLogMessage(message);
+        }
+    }
+
+    // ==================== END OBSERVER PATTERN METHODS ====================
 
     /**
      * FR-BATTLE-001: Initialize battle with teams
@@ -50,6 +168,9 @@ public class Battle {
             battleLog.log("  - " + e.toString());
         }
         battleLog.log("==================");
+
+        // Notify observers bahwa battle dimulai
+        notifyBattleStart();
     }
 
     /**
@@ -103,6 +224,9 @@ public class Battle {
             // Reset defending state at start of turn
             next.setDefending(false);
 
+            // Notify observers bahwa giliran berubah
+            notifyTurnChange(next, turnNumber);
+
             return next;
         }
 
@@ -152,8 +276,15 @@ public class Battle {
         int damage = DamageCalculator.calculateBasicAttack(attacker, defender);
         boolean isCritical = DamageCalculator.isCritical();
 
+        int oldHP = defender.getCurrentHP();
         defender.takeDamage(damage);
+        int newHP = defender.getCurrentHP();
+
         battleLog.logDamage(attacker, defender, damage, isCritical);
+
+        // Notify observers
+        notifyAttack(attacker, defender, damage, isCritical);
+        notifyHPChange(defender, oldHP, newHP);
 
         String elementAdvantage = DamageCalculator.getElementAdvantage(
                 attacker.getElement(), defender.getElement()
@@ -164,6 +295,7 @@ public class Battle {
 
         if (!defender.isAlive()) {
             battleLog.logDeath(defender);
+            notifyCharacterDefeated(defender);
         }
     }
 
@@ -185,13 +317,22 @@ public class Battle {
         user.useMP(skill.getMpCost());
         battleLog.logSkillUse(user, skill);
 
+        // Notify observers bahwa skill digunakan
+        notifySkillUsed(user, skill, target);
+
         // Execute skill based on type
         switch (skill.getSkillType()) {
             case DAMAGE:
                 int damage = DamageCalculator.calculateDamage(user, target, skill);
                 boolean isCritical = DamageCalculator.isCritical();
+                int oldHP = target.getCurrentHP();
                 target.takeDamage(damage);
+                int newHP = target.getCurrentHP();
                 battleLog.logDamage(user, target, damage, isCritical);
+
+                // Notify observers
+                notifyAttack(user, target, damage, isCritical);
+                notifyHPChange(target, oldHP, newHP);
 
                 // Element Advantage for Skills
                 Element attackElement = skill.getElement() != null ? skill.getElement() : user.getElement();
@@ -207,6 +348,7 @@ public class Battle {
 
                 if (!target.isAlive()) {
                     battleLog.logDeath(target);
+                    notifyCharacterDefeated(target);
                 }
                 break;
 
@@ -278,6 +420,9 @@ public class Battle {
     private void executeDefend(Character actor) {
         actor.setDefending(true);
         battleLog.logDefend(actor);
+
+        // Notify observers bahwa karakter defend
+        notifyDefend(actor);
     }
 
     /**
@@ -313,6 +458,9 @@ public class Battle {
         if (globalInv.useItem(item.getName())) {
             battleLog.logItemUse(user, item, target);
             item.applyEffect(target);
+
+            // Notify observers bahwa item digunakan
+            notifyItemUsed(user, item, target);
 
             // Log spesifik efek item
             switch (item.getEffect()) {
@@ -391,9 +539,13 @@ public class Battle {
             battleStatus = BattleStatus.VICTORY;
             battleLog.logVictory();
             giveRewards();
+            // Notify observers bahwa battle berakhir dengan Victory
+            notifyBattleEnd(battleStatus);
         } else if (allPlayersDead) {
             battleStatus = BattleStatus.DEFEAT;
             battleLog.logDefeat();
+            // Notify observers bahwa battle berakhir dengan Defeat
+            notifyBattleEnd(battleStatus);
         } else {
             battleStatus = BattleStatus.ONGOING;
         }
