@@ -92,15 +92,12 @@ public class Character {
     private void initializeSkills() {
         switch (characterClass) {
             case MAGE:
-                // Mage skills are element-specific
                 this.skills = Skill.getMageSkills(this.element);
                 break;
             case WARRIOR:
-                // Warrior skills are element-specific
                 this.skills = Skill.getWarriorSkills(this.element);
                 break;
             case RANGER:
-                // Ranger skills are element-specific
                 this.skills = Skill.getRangerSkills(this.element);
                 break;
         }
@@ -327,74 +324,29 @@ public class Character {
     }
 
     // Getters
-    public String getName() {
-        return name;
-    }
-
-    public CharacterClass getCharacterClass() {
-        return characterClass;
-    }
-
-    public Element getElement() {
-        return element;
-    }
-
-    public int getLevel() {
-        return level;
-    }
-
-    public int getExperience() {
-        return experience;
-    }
-
-    public int getCurrentHP() {
-        return currentHP;
-    }
-
-    public int getMaxHP() {
-        return maxHP;
-    }
-
-    public int getCurrentMP() {
-        return currentMP;
-    }
-
-    public int getMaxMP() {
-        return maxMP;
-    }
-
-    public int getAttack() {
-        return attack;
-    }
-
-    public int getDefense() {
-        return defense;
-    }
-
-    public int getSpeed() {
-        return speed;
-    }
-
-    public Status getStatus() {
-        return status;
-    }
-
-    public List<Skill> getSkills() {
-        return new ArrayList<>(skills);
-    }
-
-    public boolean isBoss() {
-        return isBoss;
-    }
+    public String getName() { return name; }
+    public CharacterClass getCharacterClass() { return characterClass; }
+    public Element getElement() { return element; }
+    public int getLevel() { return level; }
+    public int getExperience() { return experience; }
+    public int getCurrentHP() { return currentHP; }
+    public int getMaxHP() { return maxHP; }
+    public int getCurrentMP() { return currentMP; }
+    public int getMaxMP() { return maxMP; }
+    public int getAttack() { return attack; }
+    public int getDefense() { return defense; }
+    public int getSpeed() { return speed; }
+    public Status getStatus() { return status; }
+    public List<Skill> getSkills() { return new ArrayList<>(skills); }
+    public boolean isBoss() { return isBoss; }
 
     // Setters
-    public void setStatus(Status status) {
-        this.status = status;
-    }
+    public void setStatus(Status status) { this.status = status; }
+    public void setIsBoss(boolean isBoss) { this.isBoss = isBoss; }
 
-    public void setIsBoss(boolean isBoss) {
-        this.isBoss = isBoss;
-    }
+    // --- NEW SETTERS FOR BALANCING ---
+    public void setAttack(int attack) { this.attack = attack; }
+    public void setDefense(int defense) { this.defense = defense; }
 
     public void setCurrentHP(int currentHP) {
         this.currentHP = Math.max(0, Math.min(currentHP, this.maxHP));

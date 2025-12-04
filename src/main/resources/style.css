@@ -180,7 +180,7 @@
 
 /* Battle Log Text Area */
 .text-area {
-    -fx-text-fill: #b0a899;
+    -fx-text-fill: #FFD000;
     -fx-background-color: transparent;
 }
 .text-area .content {

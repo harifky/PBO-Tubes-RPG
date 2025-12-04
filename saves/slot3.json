@@ -1,6 +1,6 @@
 {
-  "saveId": "c1e21bd3-610c-46e0-adfa-859cb38e5d96",
-  "savedAt": "2025-12-04T05:21:49.5335639",
+  "saveId": "3cf75120-6a89-4687-bfbb-164b2e43163c",
+  "savedAt": "2025-12-04T08:09:43.0542506",
   "saveVersion": 1,
   "characters": [
     {
@@ -64,21 +64,6 @@
       "status": "DEAD"
     },
     {
-      "name": "czczc",
-      "characterClass": "MAGE",
-      "element": "FIRE",
-      "level": 1,
-      "experience": 0,
-      "currentHP": 0,
-      "maxHP": 80,
-      "currentMP": 65,
-      "maxMP": 100,
-      "attack": 35,
-      "defense": 10,
-      "speed": 25,
-      "status": "DEAD"
-    },
-    {
       "name": "revan",
       "characterClass": "MAGE",
       "element": "FIRE",
@@ -94,18 +79,63 @@
       "status": "DEAD"
     },
     {
-      "name": "adaddad",
-      "characterClass": "RANGER",
+      "name": "dad",
+      "characterClass": "MAGE",
+      "element": "FIRE",
+      "level": 1,
+      "experience": 50,
+      "currentHP": 0,
+      "maxHP": 80,
+      "currentMP": 30,
+      "maxMP": 100,
+      "attack": 35,
+      "defense": 10,
+      "speed": 25,
+      "status": "DEAD"
+    },
+    {
+      "name": "Rifky",
+      "characterClass": "MAGE",
       "element": "FIRE",
       "level": 2,
-      "experience": 100,
+      "experience": 0,
       "currentHP": 0,
-      "maxHP": 110,
-      "currentMP": 38,
-      "maxMP": 75,
-      "attack": 33,
-      "defense": 17,
-      "speed": 31,
+      "maxHP": 90,
+      "currentMP": 55,
+      "maxMP": 105,
+      "attack": 38,
+      "defense": 12,
+      "speed": 26,
+      "status": "DEAD"
+    },
+    {
+      "name": "test",
+      "characterClass": "MAGE",
+      "element": "FIRE",
+      "level": 1,
+      "experience": 0,
+      "currentHP": 80,
+      "maxHP": 80,
+      "currentMP": 100,
+      "maxMP": 100,
+      "attack": 35,
+      "defense": 10,
+      "speed": 25,
+      "status": "NORMAL"
+    },
+    {
+      "name": "fa",
+      "characterClass": "RANGER",
+      "element": "FIRE",
+      "level": 1,
+      "experience": 0,
+      "currentHP": 0,
+      "maxHP": 100,
+      "currentMP": 33,
+      "maxMP": 70,
+      "attack": 30,
+      "defense": 15,
+      "speed": 30,
       "status": "DEAD"
     }
   ],
@@ -121,14 +151,15 @@
   },
   "metadata": {
     "slotName": "Save Slot 3",
-    "savedAt": "2025-12-04T05:21:49.5335639",
+    "savedAt": "2025-12-04T08:09:43.0542506",
     "totalBattles": 0,
     "highestLevel": 2,
     "highestLevelCharName": "ad"
   },
   "globalInventory": {
-    "Mana Potion": 2,
-    "Defense Boost": 1,
-    "Health Potion": 1
+    "Mana Potion": 4,
+    "Defense Boost": 2,
+    "Health Potion": 1,
+    "Elixir": 1
   }
 }

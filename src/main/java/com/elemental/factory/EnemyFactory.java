@@ -12,10 +12,14 @@ import java.util.Random;
 public class EnemyFactory {
     private static final Random random = new Random();
     private static final String[] ENEMY_NAMES = {
-        "Goblin", "Orc", "Troll", "Skeleton", "Zombie",
-        "Bandit", "Assassin", "Witch", "Warlock", "Knight",
-        "Dragon", "Phoenix", "Golem", "Wraith", "Demon"
+            "Goblin", "Orc", "Troll", "Skeleton", "Zombie",
+            "Bandit", "Assassin", "Witch", "Warlock", "Knight",
+            "Dragon", "Phoenix", "Golem", "Wraith", "Demon"
     };
+
+    // Konstanta Nerf
+    private static final double ENEMY_DAMAGE_NERF = 0.75; // Musuh biasa: 75% dari damage asli (Nerf 25%)
+    private static final double BOSS_DAMAGE_NERF = 0.85;  // Boss: 85% dari damage asli (Nerf 15%)
 
     /**
      * Create a random enemy at specified level
@@ -32,6 +36,10 @@ public class EnemyFactory {
             enemy.gainExperience(enemy.getLevel() * 100);
         }
 
+        // --- BALANCING NERF ---
+        // Kurangi attack musuh agar tidak terlalu sakit (unplayable)
+        enemy.setAttack((int) (enemy.getAttack() * ENEMY_DAMAGE_NERF));
+
         return enemy;
     }
 
@@ -44,6 +52,9 @@ public class EnemyFactory {
         for (int i = 1; i < level; i++) {
             enemy.gainExperience(enemy.getLevel() * 100);
         }
+
+        // --- BALANCING NERF ---
+        enemy.setAttack((int) (enemy.getAttack() * ENEMY_DAMAGE_NERF));
 
         return enemy;
     }
@@ -64,6 +75,9 @@ public class EnemyFactory {
 
         // Mark as boss
         boss.setIsBoss(true);
+
+        // --- BALANCING NERF (Sedikit lebih kuat dari musuh biasa) ---
+        boss.setAttack((int) (boss.getAttack() * BOSS_DAMAGE_NERF));
 
         return boss;
     }
