@@ -1,8 +1,24 @@
 {
-  "saveId": "d6f8bee9-af91-4022-b909-b29027c8b00a",
-  "savedAt": "2025-12-03T16:51:19.0077861",
+  "saveId": "45f4f51e-e3f8-4c04-85bb-3f7c34d8e025",
+  "savedAt": "2025-12-04T07:46:26.5935787",
   "saveVersion": 1,
-  "characters": [],
+  "characters": [
+    {
+      "name": "ad",
+      "characterClass": "WARRIOR",
+      "element": "FIRE",
+      "level": 1,
+      "experience": 50,
+      "currentHP": 0,
+      "maxHP": 120,
+      "currentMP": 0,
+      "maxMP": 50,
+      "attack": 25,
+      "defense": 20,
+      "speed": 15,
+      "status": "DEAD"
+    }
+  ],
   "battleHistory": {
     "totalBattles": 0,
     "wins": 0,
@@ -15,13 +31,13 @@
   },
   "metadata": {
     "slotName": "Save Slot 1",
-    "savedAt": "2025-12-03T16:51:19.0077861",
+    "savedAt": "2025-12-04T07:46:26.5935787",
     "totalBattles": 0,
-    "highestLevel": 0,
-    "highestLevelCharName": "None"
+    "highestLevel": 1,
+    "highestLevelCharName": "ad"
   },
   "globalInventory": {
-    "Mana Potion": 5,
+    "Mana Potion": 6,
     "Health Potion": 5,
     "Revive": 2
   }

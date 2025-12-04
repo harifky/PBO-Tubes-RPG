@@ -1,6 +1,6 @@
 {
-  "saveId": "d65f74a5-5130-4bac-97e7-c761903ae29c",
-  "savedAt": "2025-12-03T16:26:24.2298335",
+  "saveId": "c1e21bd3-610c-46e0-adfa-859cb38e5d96",
+  "savedAt": "2025-12-04T05:21:49.5335639",
   "saveVersion": 1,
   "characters": [
     {
@@ -92,6 +92,21 @@
       "defense": 10,
       "speed": 25,
       "status": "DEAD"
+    },
+    {
+      "name": "adaddad",
+      "characterClass": "RANGER",
+      "element": "FIRE",
+      "level": 2,
+      "experience": 100,
+      "currentHP": 0,
+      "maxHP": 110,
+      "currentMP": 38,
+      "maxMP": 75,
+      "attack": 33,
+      "defense": 17,
+      "speed": 31,
+      "status": "DEAD"
     }
   ],
   "battleHistory": {
@@ -106,12 +121,14 @@
   },
   "metadata": {
     "slotName": "Save Slot 3",
-    "savedAt": "2025-12-03T16:26:24.2298335",
+    "savedAt": "2025-12-04T05:21:49.5335639",
     "totalBattles": 0,
     "highestLevel": 2,
     "highestLevelCharName": "ad"
   },
   "globalInventory": {
-    "Defense Boost": 1
+    "Mana Potion": 2,
+    "Defense Boost": 1,
+    "Health Potion": 1
   }
 }

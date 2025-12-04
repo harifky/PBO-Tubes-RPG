@@ -5,8 +5,6 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
-
 import java.io.InputStream;
 
 public class SpriteFactory {
@@ -14,31 +12,21 @@ public class SpriteFactory {
     private static Image enemySheet;
 
     static {
-        // UPDATE: Sekarang memuat 'enemies.png' (bukan .jpg lagi)
         playerSheet = loadImage("players.png");
         enemySheet = loadImage("enemies.png");
     }
 
-    // Helper method untuk load gambar dengan pengecekan error
     private static Image loadImage(String filename) {
         String path = "/assets/" + filename;
         InputStream stream = SpriteFactory.class.getResourceAsStream(path);
-
-        if (stream == null) {
-            System.err.println("❌ CRITICAL ERROR: File gambar tidak ditemukan: " + path);
-            System.err.println("   Pastikan file ada di folder: src/main/resources/assets/" + filename);
-            System.err.println("   Dan jangan lupa REBUILD PROJECT setelah menambah file baru!");
-            return null;
-        }
+        if (stream == null) return null;
         return new Image(stream);
     }
 
     public static ImageView getPlayerSprite(CharacterClass charClass) {
-        // Fallback jika gambar gagal dimuat
         if (playerSheet == null) return createPlaceholder(Color.BLUE);
 
         ImageView view = new ImageView(playerSheet);
-
         double width = playerSheet.getWidth() / 3;
         double height = playerSheet.getHeight() / 2;
 
@@ -49,18 +37,21 @@ public class SpriteFactory {
             case RANGER: col = 2; break;
         }
 
-        int row = 1; // Back View
+        // Row 1 = Tampak Belakang (Back View)
+        int row = 1;
 
         Rectangle2D viewport = new Rectangle2D(col * width, row * height, width, height);
         view.setViewport(viewport);
-        view.setFitHeight(180);
+
+        // --- PERUBAHAN UKURAN ---
+        // Sebelumnya 220, dikecilkan jadi 140 agar proporsional
+        view.setFitHeight(140);
         view.setPreserveRatio(true);
 
         return view;
     }
 
     public static ImageView getEnemySprite(String enemyName) {
-        // Fallback jika gambar gagal dimuat
         if (enemySheet == null) return createPlaceholder(Color.RED);
 
         ImageView view = new ImageView(enemySheet);
@@ -68,41 +59,37 @@ public class SpriteFactory {
 
         double totalW = enemySheet.getWidth();
         double totalH = enemySheet.getHeight();
+        double spriteW = totalW / 5;
+        double spriteH = totalH / 3;
 
-        double normalWidth = totalW / 5;
-        double normalHeight = totalH / 3;
-        double bossWidth = totalW / 4;
+        int col = 0; int row = 0;
 
-        double x = 0;
-        double y = 0;
-        double w = normalWidth;
-        double h = normalHeight;
+        // Logic Mapping
+        if (name.contains("goblin"))       { col = 0; row = 0; }
+        else if (name.contains("orc"))     { col = 1; row = 0; }
+        else if (name.contains("troll"))   { col = 2; row = 0; }
+        else if (name.contains("skeleton")){ col = 3; row = 0; }
+        else if (name.contains("zombie"))  { col = 4; row = 0; }
+        else if (name.contains("bandit"))    { col = 0; row = 1; }
+        else if (name.contains("assassin"))  { col = 1; row = 1; }
+        else if (name.contains("witch"))     { col = 2; row = 1; }
+        else if (name.contains("warlock"))   { col = 3; row = 1; }
+        else if (name.contains("knight"))    { col = 4; row = 1; }
+        else if (name.contains("dragon") || name.contains("phoenix")) { col = 0; row = 2; }
+        else if (name.contains("golem"))     { col = 1; row = 2; }
+        else if (name.contains("wraith"))    { col = 2; row = 2; }
+        else if (name.contains("ghost"))     { col = 3; row = 2; }
+        else if (name.contains("demon"))     { col = 4; row = 2; }
 
-        // --- MAPPING COORDINATES ---
-        if (name.contains("goblin")) { x = 0; y = 0; }
-        else if (name.contains("orc")) { x = normalWidth; y = 0; }
-        else if (name.contains("troll")) { x = 2 * normalWidth; y = 0; }
-        else if (name.contains("skeleton")) { x = 3 * normalWidth; y = 0; }
-        else if (name.contains("zombie")) { x = 4 * normalWidth; y = 0; }
-
-        else if (name.contains("bandit")) { x = 0; y = normalHeight; }
-        else if (name.contains("assassin") || name.contains("rogue")) { x = normalWidth; y = normalHeight; }
-        else if (name.contains("witch")) { x = 2 * normalWidth; y = normalHeight; }
-        else if (name.contains("warlock") || name.contains("demon")) { x = 3 * normalWidth; y = normalHeight; }
-        else if (name.contains("knight")) { x = 4 * normalWidth; y = normalHeight; }
-
-        else if (name.contains("dragon") || name.contains("phoenix")) { x = 0; y = 2 * normalHeight; w = bossWidth; }
-        else if (name.contains("golem")) { x = bossWidth; y = 2 * normalHeight; w = bossWidth; }
-        else if (name.contains("wraith") || name.contains("ghost")) { x = 2 * bossWidth; y = 2 * normalHeight; w = bossWidth; }
-        else if (name.contains("demon") || name.contains("satan")) { x = 3 * bossWidth; y = 2 * normalHeight; w = bossWidth; }
-
-        Rectangle2D viewport = new Rectangle2D(x, y, w, h);
+        Rectangle2D viewport = new Rectangle2D(col * spriteW, row * spriteH, spriteW, spriteH);
         view.setViewport(viewport);
 
-        if (y >= 2 * normalHeight) {
-            view.setFitHeight(180);
+        // --- PERUBAHAN UKURAN ---
+        // Dikecilkan agar pas dengan background
+        if (row == 2) {
+            view.setFitHeight(150); // Boss sedikit lebih besar
         } else {
-            view.setFitHeight(140);
+            view.setFitHeight(110); // Musuh biasa lebih kecil
         }
 
         view.setPreserveRatio(true);
@@ -110,6 +97,6 @@ public class SpriteFactory {
     }
 
     private static ImageView createPlaceholder(Color color) {
-        return new ImageView(); // Return kosong agar tidak crash
+        return new ImageView();
     }
 }

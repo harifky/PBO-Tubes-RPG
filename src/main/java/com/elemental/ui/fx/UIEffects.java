@@ -13,11 +13,18 @@ public class UIEffects {
      * Membuat efek getar pada node (misal: saat kena damage)
      */
     public static void shakeNode(Node node) {
+        // PERBAIKAN: Ambil posisi X saat ini agar tidak mereset posisi (tidak lompat)
+        double originalX = node.getTranslateX();
+
         TranslateTransition tt = new TranslateTransition(Duration.millis(50), node);
-        tt.setFromX(0);
-        tt.setByX(10); // Geser 10px
-        tt.setCycleCount(6); // Bolak balik 6 kali
+        tt.setFromX(originalX); // Mulai dari posisi saat ini
+        tt.setByX(10);          // Geser 10px ke kanan (relative)
+        tt.setCycleCount(6);    // Bolak balik 6 kali
         tt.setAutoReverse(true);
+
+        // Pastikan posisi kembali sempurna setelah animasi selesai (untuk keamanan)
+        tt.setOnFinished(e -> node.setTranslateX(originalX));
+
         tt.play();
     }
 
